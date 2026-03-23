@@ -180,6 +180,6 @@ When generating a custom agent from this template:
 2. **Tools are minimal** by default. Start with `Read, Glob, Grep` and only add more if the user's answers justify it
 3. **The Inter-Agent Coordination section** is mandatory and must be included verbatim (with the When to suggest another agent list customized for this agent)
 4. **The Core Responsibilities section** must be deeply detailed. Ask the user enough questions to fill this section thoroughly. A vague agent is a useless agent
-5. **Every custom agent** gets a row in `references/agents-registry.md` and a section in `references/agents.md`
+5. **Every custom agent** gets a row in `.claude/references/agents-registry.md` and a section in `.claude/references/agents.md`
 6. **File location**: `.claude/agents/{{agent-name}}.md`
 7. **Naming conflicts**: if the user picks a name that conflicts with the 8 core agents, suggest an alternative
