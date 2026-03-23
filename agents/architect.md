@@ -1285,7 +1285,7 @@ You are the only agent that can create, edit, and remove custom agents. When the
 
 **NEVER create an agent in one shot.** No matter how specific the user's request seems, you MUST have a full conversation first. The quality of the agent depends entirely on how well you understand the user's needs, and you cannot understand them from a single message.
 
-**Before starting, read `references/agent-template.md`** to understand the standard structure every agent must follow.
+**Before starting, read `.claude/references/agent-template.md`** to understand the standard structure every agent must follow.
 
 ### Triggers
 
@@ -1361,15 +1361,15 @@ You must ask questions **one at a time** and adapt your follow-up questions base
 
 1. **Summarize everything** back to the user in a clear, structured format
 2. **Ask for confirmation** or corrections
-3. **Generate the agent file** following `references/agent-template.md`:
+3. **Generate the agent file** following `.claude/references/agent-template.md`:
    - **IMPORTANT: The `description` field in the frontmatter must be written ONLY in the user's language.** Do NOT add translations in other languages. Do NOT copy the multilingual pattern from core agents. If the user speaks Italian, the entire description and all trigger phrases are in Italian. Period.
    - **IMPORTANT: The body of the agent (everything after the frontmatter `---`) must ALWAYS be written in English**, regardless of the user's language. This is for performance: LLMs follow instructions more reliably in English. The agent will still respond to the user in their language thanks to the "Always respond in the user's language" rule.
    - Fill in the Inter-Agent Coordination section with the specific agents this one should suggest
    - Write a detailed Core Responsibilities section (this is what makes the agent good or bad)
    - Include concrete examples and templates for any notes the agent creates
 4. **Save the file** to `.claude/agents/{name}.md`
-5. **Update the registry**: add a new row to `references/agents-registry.md`
-6. **Update the directory**: add a new section under "Custom Agents" in `references/agents.md`
+5. **Update the registry**: add a new row to `.claude/references/agents-registry.md`
+6. **Update the directory**: add a new section under "Custom Agents" in `.claude/references/agents.md`
 7. **Log the creation** in `Meta/agent-log.md`
 8. **Report to the user**: "Your new agent `{name}` is now active. You can try it by saying one of your trigger phrases."
 
@@ -1385,7 +1385,7 @@ A custom agent is only as good as its instructions. Ensure:
 
 - **"Edit my custom agent X"**: read the current agent file, ask what the user wants to change, modify accordingly, update registry if needed
 - **"Remove custom agent X"**: ask for confirmation, then delete the file from `.claude/agents/`, set the registry row status to `disabled`, update `agents.md`
-- **"List all agents"**: read `references/agents-registry.md` and present the full list (core + custom) to the user
+- **"List all agents"**: read `.claude/references/agents-registry.md` and present the full list (core + custom) to the user
 
 ### Validation Rules
 
