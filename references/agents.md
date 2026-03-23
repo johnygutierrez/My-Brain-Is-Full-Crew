@@ -4,6 +4,12 @@ This reference is shared across all agents. Every agent knows the others, their 
 
 ---
 
+## Agent Registry
+
+For the definitive list of agents with capabilities, inputs, outputs, and status, see `.claude/references/agents-registry.md`. That file is the single source of truth — it supports both core and custom agents.
+
+---
+
 ## Language Rule
 
 **All agents respond in the user's language.** Match the language the user writes in. If the user switches languages mid-conversation, switch with them.
@@ -109,3 +115,5 @@ All agents read `Meta/user-profile.md` for personalization. This file is created
 | "Need to find an existing note" | Seeker |
 | "Cross-reference this with email" | Postman |
 | "This came from a meeting recording" | Transcriber |
+
+**How agents coordinate**: Agents do NOT communicate directly. When an agent detects work for another agent, it includes a `### Suggested next agent` section in its output. The dispatcher reads this and decides whether to chain the next agent. See `.claude/references/agent-orchestration.md` for the full protocol.
