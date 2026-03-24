@@ -129,7 +129,7 @@ for ref in "$REPO_DIR/references/"*.md; do
   ref_name="$(basename "$ref")"
   # On reinstall, preserve user-mutable reference files
   if [[ $EXISTING -eq 1 && -f "$VAULT_DIR/.claude/references/$ref_name" ]]; then
-    if echo "$USER_MUTABLE_REFS" | grep -qw "$ref_name"; then
+    if [[ " $USER_MUTABLE_REFS " == *" $ref_name "* ]]; then
       warn "Preserving existing $ref_name (run updateme.sh to merge upstream changes)"
       echo "$ref_name" >> "$VAULT_DIR/.claude/references/.core-manifest"
       continue

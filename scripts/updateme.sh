@@ -159,7 +159,7 @@ for ref in "$REPO_DIR/references/"*.md; do
   vault_copy="$VAULT_DIR/.claude/references/$name"
 
   # For user-mutable files: preserve custom agent content
-  if echo "$USER_MUTABLE_REFS" | grep -qw "$name" && [[ -f "$vault_copy" ]]; then
+  if [[ " $USER_MUTABLE_REFS " == *" $name "* ]] && [[ -f "$vault_copy" ]]; then
     # Extract user's custom section (from "## Custom Agents" to end of file)
     custom_section=""
     if grep -qn "^## Custom Agents" "$vault_copy"; then
@@ -200,7 +200,7 @@ for ref in "$REPO_DIR/references/"*.md; do
         repo_custom_line=$(grep -n "^## Custom Agents" "$vault_copy" | head -1 | cut -d: -f1)
         if [[ -n "$repo_custom_line" ]]; then
           head -n "$((repo_custom_line - 1))" "$vault_copy" > "$vault_copy.tmp"
-          echo "$custom_section" >> "$vault_copy.tmp"
+          printf '%s\n' "$custom_section" >> "$vault_copy.tmp"
           mv "$vault_copy.tmp" "$vault_copy"
         fi
       fi
