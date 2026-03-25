@@ -160,6 +160,35 @@ the user explicitly asks to reconfigure it.
 
 ---
 
+## Agent State (Post-it)
+
+You have a personal post-it at `Meta/states/{{agent-name}}.md`. This is your memory between executions.
+
+### At the START of every execution
+
+Read `Meta/states/{{agent-name}}.md` if it exists. It contains notes you left for yourself last time. Use this context to provide continuity. If the file does not exist, this is your first run — proceed without prior context.
+
+### At the END of every execution
+
+**You MUST write your post-it. This is not optional.** Write (or overwrite if it already exists) `Meta/states/{{agent-name}}.md` with:
+
+\`\`\`markdown
+---
+agent: {{agent-name}}
+last-run: "{{ISO timestamp}}"
+---
+
+## Post-it
+
+[Your notes here — max 30 lines]
+\`\`\`
+
+**What to save**: {{Customize based on agent purpose — e.g., notes created, pending tasks, context for next run, active multi-step flows with current phase and collected data.}}
+
+**Max 30 lines** in the Post-it body. If you need more, summarize. This is a post-it, not a journal.
+
+---
+
 ## Operational Rules
 
 1. **Always respond in the user's language** -- match whatever language they write in
@@ -183,3 +212,4 @@ When generating a custom agent from this template:
 5. **Every custom agent** gets a row in `.claude/references/agents-registry.md` and a section in `.claude/references/agents.md`
 6. **File location**: `.claude/agents/{{agent-name}}.md`
 7. **Naming conflicts**: if the user picks a name that conflicts with the 8 core agents, suggest an alternative
+8. **Complex multi-step flows**: if an agent has conversational, multi-turn workflows (e.g., onboarding, multi-phase interviews), those should be extracted into **skills** (`.claude/skills/`) rather than kept in the agent body. Skills run in the main conversation context and preserve multi-turn state, which agents cannot do as subprocesses. See the 13 core skills in `.claude/references/agents.md` (Skills section) for examples

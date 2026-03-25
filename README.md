@@ -1,7 +1,7 @@
 <h1 align="center">🧠 My Brain Is Full — Crew</h1>
 
 <p align="center">
-  <strong>A team of 8+ AI agents that manage your Obsidian vault<br>so your brain doesn't have to.</strong>
+  <strong>A team of 8+ AI agents and 13 specialized skills that manage your Obsidian vault<br>so your brain doesn't have to.</strong>
 </p>
 
 <p align="center">
@@ -16,6 +16,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Agents-8%2B-blueviolet?style=flat-square" alt="8+ Agents" />
+  <img src="https://img.shields.io/badge/Skills-13-blue?style=flat-square" alt="13 Skills" />
   <img src="https://img.shields.io/badge/Language-Any-success?style=flat-square" alt="Any Language" />
   <img src="https://img.shields.io/badge/Platform-Obsidian%20%2B%20Claude-blue?style=flat-square" alt="Obsidian + Claude" />
   <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="MIT License" />
@@ -29,7 +30,7 @@ I'm a PhD researcher. I've spent years training my brain to hold enormous amount
 
 Then it didn't.
 
-Memory started slipping. Not dramatically (no diagnosis, no crisis), just the slow, creeping realization that the mental budget was getting empty, and things were falling through the cracks. I'd forget what I'd read. Lose track of conversations. Feel constantly behind, constantly overwhelmed.
+Memory started slipping. Not dramatically (no diagnosis, no crisis) just the slow, creeping realization that the mental budget was getting empty, and things were falling through the cracks. I'd forget what I'd read. Lose track of conversations. Feel constantly behind, constantly overwhelmed.
 
 I started looking for solutions. I found a lot of Obsidian + Claude setups online. They were mostly clever note-capture tools, glorified search engines for your second brain. Useful. But not what I needed.
 
@@ -107,15 +108,42 @@ Key points:
 | 7 | **Transcriber** | Audio & Meetings | Turns recordings and transcripts into rich, structured meeting notes |
 | 8 | **Postman** | Email & Calendar | Bridges Gmail and Google Calendar with your vault: deadline radar, meeting prep |
 
-> **The agents coordinate through a dispatcher.** When the Transcriber processes a meeting and discovers a new project, the dispatcher chains the Architect to create the folder structure. When the Postman finds emails about deadlines, the dispatcher routes to the Sorter. It's a crew, not a collection of isolated tools.
+> **Agents + Skills = the full system.** Each agent handles quick, reactive tasks. For complex multi-step workflows (like onboarding, email triage, or vault audits), the dispatcher routes to one of **13 specialized skills** that run as guided conversations. See the [Skills](#skills) section below.
+
+---
+
+## Skills
+
+Skills handle the complex, multi-step workflows that need conversational context. While agents are great for quick, one-shot tasks, some operations — like onboarding or email triage — require a back-and-forth conversation. Skills run in the main conversation context, so they can ask questions, wait for answers, and maintain state naturally.
+
+The dispatcher automatically routes your message to the right skill or agent. You don't need to remember which is which.
+
+| Skill | What it does | Extracted from |
+|-------|-------------|----------------|
+| `/onboarding` | Full vault setup conversation | Architect |
+| `/create-agent` | Design a custom agent step by step | Architect |
+| `/manage-agent` | Edit, remove, or list custom agents | Architect |
+| `/defrag` | Weekly vault defragmentation (5 phases) | Architect |
+| `/email-triage` | Scan and prioritize unread emails | Postman |
+| `/meeting-prep` | Comprehensive meeting brief | Postman |
+| `/weekly-agenda` | Day-by-day week overview | Postman |
+| `/deadline-radar` | Unified deadline timeline | Postman |
+| `/transcribe` | Process recordings into structured notes | Transcriber |
+| `/vault-audit` | Full 7-phase vault audit | Librarian |
+| `/deep-clean` | Extended vault cleanup | Librarian |
+| `/tag-garden` | Tag analysis and cleanup | Librarian |
+| `/inbox-triage` | Process and route inbox notes | Sorter |
 
 ---
 
 ## How it works
 
 ```
-You talk to Claude  →  The right agent activates  →  Your vault gets updated
+You talk to Claude  →  Dispatcher checks skills first  →  If match: invokes skill
+                                                         →  If no match: invokes agent  →  Your vault gets updated
 ```
+
+The dispatcher has two delegation mechanisms. **Skills** handle complex, multi-step conversational flows (onboarding, email triage, vault audits). **Agents** handle quick, reactive single-shot operations (capture a note, search the vault, create a folder). Skills are checked first because they cover the most involved workflows. If no skill matches, the dispatcher falls through to agents.
 
 Each crew member is an isolated AI with its own system prompt, tool restrictions, and model assignment. You clone the repo into your vault, run a setup script, and from that moment on you manage everything through conversation. No GUI, no drag-and-drop, no manual file management.
 
@@ -127,10 +155,21 @@ graph TB
     Claude["Claude Code\nDispatcher"]
 
     User -->|"talk naturally"| Claude
-    Claude -->|"activates the right agent"| Agents
+    Claude -->|"skill match?\ninvoke skill"| Skills
+    Claude -->|"no skill match?\ninvoke agent"| Agents
     Claude -->|"chains agents when needed"| Agents
 
-    subgraph Agents["The Crew"]
+    subgraph Skills["Specialized Skills (13)"]
+        direction TB
+        Onboarding["/onboarding"]
+        EmailTriage["/email-triage"]
+        Transcribe["/transcribe"]
+        InboxTriage["/inbox-triage"]
+        VaultAudit["/vault-audit"]
+        MoreSkills["... +8 more"]
+    end
+
+    subgraph Agents["The Crew (8 agents)"]
         direction TB
 
         subgraph Core["Core: Knowledge Management"]
@@ -148,6 +187,7 @@ graph TB
         end
     end
 
+    Skills <-->|"read & write"| Vault
     Agents <-->|"read & write"| Vault
 
     subgraph Vault["Your Obsidian Vault"]
@@ -162,46 +202,47 @@ graph TB
 
     style User fill:#7c3aed,stroke:#5b21b6,color:#fff
     style Claude fill:#3b82f6,stroke:#2563eb,color:#fff
+    style Skills fill:#fef3c7,stroke:#f59e0b
     style Core fill:#e0e7ff,stroke:#818cf8
     style External fill:#dbeafe,stroke:#60a5fa
 ```
 
-### Agent Coordination Flow
+### Agent & Skill Coordination Flow
 
 ```mermaid
 sequenceDiagram
     participant U as You
     participant D as Dispatcher
-    participant T as Transcriber
-    participant A as Architect
-    participant P as Postman
-    participant S as Sorter
+    participant TS as /transcribe skill
+    participant A as Architect agent
+    participant ES as /email-triage skill
+    participant S as Sorter agent
 
     U->>D: "Process my meeting recording"
-    D->>T: activates
-    T->>T: transcribes & creates note
-    T-->>D: "Suggested next agent: Architect<br/>(new project mentioned)"
-    D->>A: chains automatically
+    D->>TS: invokes /transcribe skill
+    TS->>TS: multi-step conversation:<br/>asks questions, transcribes,<br/>creates structured note
+    TS-->>D: "Suggested next agent: Architect<br/>(new project mentioned)"
+    D->>A: chains Architect agent
     A->>A: creates folder structure
 
     U->>D: "Check my email"
-    D->>P: activates
-    P->>P: scans Gmail, saves notes
-    P-->>D: "Suggested next agent: Sorter<br/>(deadline notes in Inbox)"
-    D->>S: chains automatically
+    D->>ES: invokes /email-triage skill
+    ES->>ES: scans Gmail, scores priority,<br/>saves important emails as notes
+    ES-->>D: "Suggested next agent: Sorter<br/>(deadline notes in Inbox)"
+    D->>S: chains Sorter agent
     S->>S: files notes to correct locations
 ```
 
 ### Works on both Claude Code CLI and Claude Code Desktop (Cowork)
 
-The installer sets up **two parallel formats** so the Crew works everywhere:
+The installer sets up **two parallel layers** so the Crew works everywhere:
 
-| Format | Location | Used by |
-|--------|----------|---------|
-| **Subagents** | `.claude/agents/` | Claude Code CLI (`claude` in terminal) |
-| **Skills** | `.claude/skills/` | Claude Code Desktop / Cowork |
+| Layer | Location | Purpose |
+|-------|----------|---------|
+| **Agents** | `.claude/agents/` | Lightweight reactive agents for single-shot tasks (capture, search, create) |
+| **Skills** | `.claude/skills/` | Specialized multi-step flows for complex tasks (onboarding, triage, audits) |
 
-You don't need to choose. `launchme.sh` installs both automatically. Same agents, same behavior, same prompts. The only difference is the format Claude reads them in.
+Both layers work on CLI and Desktop. `launchme.sh` installs both automatically. The dispatcher decides whether to invoke a skill or an agent based on your message.
 
 Your vault follows a hybrid **PARA + Zettelkasten** structure:
 
@@ -243,7 +284,7 @@ cd My-Brain-Is-Full-Crew
 bash scripts/launchme.sh
 ```
 
-The script asks a couple of questions and copies the agents into your vault's `.claude/` directory. That's it. When Claude Code is open in your vault folder, the agents activate automatically. When you're in any other project, they don't.
+The script asks a couple of questions and copies the agents and skills into your vault's `.claude/` directory. That's it. When Claude Code is open in your vault folder, the agents activate automatically. When you're in any other project, they don't.
 
 > **Never used a terminal before?** See the [step-by-step guide for beginners](docs/getting-started.md). It walks you through everything, or just show this page to a tech-savvy friend. It takes 60 seconds.
 
@@ -253,7 +294,7 @@ Open Claude Code **inside your vault folder** and say:
 
 > **"Initialize my vault"**
 
-The **Architect** will start a friendly onboarding conversation:
+The `/onboarding` skill starts a friendly guided conversation:
 
 1. **Who are you?** Name, language, role, what brought you here
 2. **What do you need?** Which agents to activate, which areas of life to manage
@@ -265,12 +306,12 @@ After onboarding, the Architect creates your entire vault folder structure, save
 
 | You say | What happens |
 |---------|-------------|
-| *"Save this: meeting with Marco about the Q3 budget, he wants the report by Friday"* | **Scribe** captures it as a clean note with tasks, wikilinks, and deadline |
-| *"Triage my inbox"* | **Sorter** files everything, updates MOCs, gives you a summary |
-| *"What did we decide about the pricing strategy?"* | **Seeker** searches your vault, synthesizes the answer with source citations |
-| *"Check my email"* | **Postman** scans Gmail, saves important emails, flags deadlines |
-| *"Weekly review"* | **Librarian** runs a full vault audit: broken links, duplicates, health score |
-| *"Find connections for my latest note"* | **Connector** discovers hidden links to other notes in your vault |
+| *"Save this: meeting with Marco about the Q3 budget, he wants the report by Friday"* | **Scribe** agent captures it as a clean note with tasks, wikilinks, and deadline |
+| *"Triage my inbox"* | `/inbox-triage` skill files everything, updates MOCs, gives you a summary |
+| *"What did we decide about the pricing strategy?"* | **Seeker** agent searches your vault, synthesizes the answer with source citations |
+| *"Check my email"* | `/email-triage` skill scans Gmail, saves important emails, flags deadlines |
+| *"Weekly review"* | `/vault-audit` skill runs a full vault audit: broken links, duplicates, health score |
+| *"Find connections for my latest note"* | **Connector** agent discovers hidden links to other notes in your vault |
 
 ---
 
@@ -301,10 +342,10 @@ Capture a quick thought on a walk. Check your email from the couch. Search your 
 
 ## Agent coordination
 
-Agents coordinate through a dispatcher-driven orchestration system. When an agent finishes its task and detects work for another agent, it signals the dispatcher via a `### Suggested next agent` section in its output. The dispatcher reads this and automatically chains the next agent:
+Agents coordinate through a dispatcher-driven orchestration system. When an agent or skill finishes its task and detects work for another agent, it signals the dispatcher via a `### Suggested next agent` section in its output. The dispatcher reads this and automatically chains the next agent:
 
-- The **Transcriber** processes a meeting that introduces a new project -- the dispatcher chains the **Architect** to create the folder structure
-- The **Postman** finds emails about deadlines -- the dispatcher chains the **Sorter** to file them
+- The `/transcribe` skill processes a meeting that introduces a new project -- the dispatcher chains the **Architect** to create the folder structure
+- The `/email-triage` skill finds emails about deadlines -- the dispatcher chains the **Sorter** to file them
 - The **Connector** finds orphan notes -- the dispatcher chains the **Librarian** to investigate
 - The **Sorter** finds notes that belong to a new area -- the dispatcher chains the **Architect** to build it
 
@@ -314,13 +355,13 @@ No agent works in isolation. The crew is greater than the sum of its parts.
 
 ## Required integrations
 
-The **Postman** agent requires:
+The **Postman** agent (and its related skills: `/email-triage`, `/meeting-prep`, `/weekly-agenda`, `/deadline-radar`) requires:
 - **Gmail** MCP connector (to read and process your inbox)
 - **Google Calendar** MCP connector (to import events and manage your schedule)
 
 The `launchme.sh` script offers to set up `.mcp.json` in your vault automatically. You just need to authorize them when prompted by Claude Code.
 
-All other agents work with just your local Obsidian vault. No integrations needed.
+All other agents and skills work with just your local Obsidian vault. No integrations needed.
 
 ### Updating
 
@@ -348,7 +389,7 @@ Only changed files are updated. Your vault notes are never touched.
 
 ```
 My-Brain-Is-Full-Crew/               ← cloned inside your vault
-├── agents/                          The 8 subagents
+├── agents/                          The 8 core agents
 │   ├── architect.md                   Vault setup & onboarding
 │   ├── scribe.md                      Text capture & note creation
 │   ├── sorter.md                      Inbox triage & filing
@@ -357,13 +398,24 @@ My-Brain-Is-Full-Crew/               ← cloned inside your vault
 │   ├── librarian.md                   Vault health & maintenance
 │   ├── transcriber.md                 Audio & meeting transcription
 │   └── postman.md                     Email & calendar integration
-├── skills/                          Auto-generated skills (for Cowork/Desktop)
-│   └── {name}/SKILL.md               One per agent, same content
+├── skills/                          The 13 specialized skills
+│   ├── onboarding/SKILL.md            Full vault setup conversation
+│   ├── create-agent/SKILL.md          Design a custom agent step by step
+│   ├── manage-agent/SKILL.md          Edit, remove, or list custom agents
+│   ├── defrag/SKILL.md                Weekly vault defragmentation
+│   ├── email-triage/SKILL.md          Scan and prioritize unread emails
+│   ├── meeting-prep/SKILL.md          Comprehensive meeting brief
+│   ├── weekly-agenda/SKILL.md         Day-by-day week overview
+│   ├── deadline-radar/SKILL.md        Unified deadline timeline
+│   ├── transcribe/SKILL.md            Process recordings into structured notes
+│   ├── vault-audit/SKILL.md           Full 7-phase vault audit
+│   ├── deep-clean/SKILL.md            Extended vault cleanup
+│   ├── tag-garden/SKILL.md            Tag analysis and cleanup
+│   └── inbox-triage/SKILL.md          Process and route inbox notes
 ├── references/                      Shared agent documentation
 ├── scripts/
 │   ├── launchme.sh                    First-time installer
-│   ├── updateme.sh                    Post-pull updater
-│   └── generate-skills.py             Converts agents to skills
+│   └── updateme.sh                    Post-pull updater
 ├── docs/                            User-facing documentation
 │   ├── getting-started.md             Step-by-step setup guide
 │   ├── examples.md                    Real-world usage examples
@@ -380,10 +432,10 @@ After running `launchme.sh`, your vault looks like:
 ```
 your-vault/
 ├── .claude/
-│   ├── agents/          ← crew subagents (Claude Code CLI)
-│   ├── skills/          ← crew skills (Claude Code Desktop / Cowork)
+│   ├── agents/          ← lightweight reactive agents
+│   ├── skills/          ← specialized multi-step skills
 │   └── references/      ← shared docs
-├── CLAUDE.md            ← project instructions
+├── CLAUDE.md            ← project instructions (dispatcher routing)
 ├── .mcp.json            ← Gmail + Calendar (if enabled)
 ├── My-Brain-Is-Full-Crew/  ← the repo (for updates)
 └── ... your Obsidian notes
@@ -398,9 +450,9 @@ This started as one person's survival tool. I'm sharing it because I think it ca
 **Every single PR is welcome.** I mean it. If you see something that could be improved (a better prompt structure, a smarter agent behavior, a more elegant architecture) please submit it. I won't be precious about my code. The goal is to help people, not to protect my ego.
 
 If you want to:
-- **Improve an agent**: make it smarter, add a mode, fix edge cases
+- **Improve an agent or skill**: make it smarter, add a mode, fix edge cases
 - **Fix my prompts**: if you know better patterns, teach me
-- **Propose a new crew member**: a new agent for a new domain
+- **Propose a new crew member**: a new agent or skill for a new domain
 - **Report a bug**: something an agent does wrong
 - **Add examples**: share how you use the Crew
 - **Just tell me what I'm doing wrong**: I'll listen
@@ -416,7 +468,8 @@ If you want to:
 The Crew is designed for people who are overwhelmed, not for people who enjoy organizing. Every design decision prioritizes **minimum friction**:
 
 - **Chat is the interface**: no manual file management
-- **Agents handle the boring stuff**: filing, linking, maintaining
+- **Skills handle the heavy lifting**: multi-step workflows run as guided conversations
+- **Agents handle the quick stuff**: filing, linking, capturing, searching
 - **Any language, any time**: your brain shouldn't have to switch languages to stay organized
 - **Conservative by default**: agents never delete, always archive. They ask before making big decisions.
 

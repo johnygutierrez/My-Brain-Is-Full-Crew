@@ -6,14 +6,40 @@ This document defines how agents coordinate through the **dispatcher** (`CLAUDE.
 
 ## Overview
 
-The dispatcher is a **reactive multi-router**:
+The dispatcher is a **reactive multi-router** with skill-first routing:
 
-1. **User sends a message** → dispatcher picks the best agent by priority
-2. **Agent executes** → returns output to the dispatcher
-3. **Dispatcher reads the output** → decides if another agent should be chained
-4. **Repeat** until done or max depth reached
+1. **User sends a message** → dispatcher checks the **skill routing table** first
+2. **Skill match found?** → invoke the skill via the **Skill tool** and respond to user
+3. **No skill match?** → dispatcher picks the best **agent** by priority
+4. **Agent executes** → returns output to the dispatcher
+5. **Dispatcher reads the output** → decides if another agent should be chained
+6. **Repeat** until done or max depth reached
 
 Agents help the dispatcher by including **suggestions** in their output when they detect work for other agents.
+
+---
+
+## Skill-First Routing
+
+Skills are checked **before** agents. They handle complex, multi-step workflows that were extracted from agents for better performance.
+
+### How it works
+
+- The dispatcher maintains a **skill routing table** (defined in `CLAUDE.md`) with trigger phrases in multiple languages.
+- If a user message matches a skill trigger, the skill is invoked via the **Skill tool** (not the Agent tool). The dispatcher does NOT also invoke the source agent.
+- Skills run in the **main conversation context**, preserving multi-turn state. This is different from agents, which run as subprocesses.
+- If no skill matches, the dispatcher falls through to the **agent routing table**.
+
+### Skill-to-agent chaining
+
+Skills can still produce output that triggers agent chaining:
+- A skill may include `### Suggested next agent` in its output (e.g., `/onboarding` may suggest Connector to link newly created notes).
+- The dispatcher reads this output and applies the same chaining rules as for agents (check registry, check call chain, max depth 3).
+- Skills count as step 1 in the call chain when they produce agent suggestions.
+
+### List of skills
+
+See `.claude/references/agents.md` (Skills section) for the full table of skills, their source agents, and purposes.
 
 ---
 
@@ -131,6 +157,35 @@ Custom agents are created by the Architect and stored in `.claude/agents/`. They
 If a vault still has the old `Meta/agent-messages.md` file:
 - The **Librarian** will rename it to `Meta/agent-messages-DEPRECATED.md` during maintenance
 - Agents should ignore this file entirely — all coordination now flows through the dispatcher
+
+---
+
+## Agent State (Post-it Protocol)
+
+Every agent has a personal post-it file at `Meta/states/{agent-name}.md`. This provides continuity between executions.
+
+### Rules
+
+- **One file per agent** — named after the agent (e.g., `Meta/states/scribe.md`)
+- **Always written** — every agent writes its post-it at the end of every execution, no exceptions
+- **Overwrites previous** — each execution replaces the previous post-it (it is not a log)
+- **Max 30 lines** — agents must keep the body under 30 lines to prevent bloat
+- **Read at start** — agents read their post-it at the start of execution for context
+- **Private** — the dispatcher does not read or write agent post-its. Only the owning agent touches its own file
+- **Multi-step flows** — agents that run multi-step conversations (e.g., Architect onboarding) use the post-it to track their current phase and collected answers, so they can resume on re-invocation
+
+### Format
+
+```markdown
+---
+agent: {agent-name}
+last-run: "YYYY-MM-DDTHH:MM:SS"
+---
+
+## Post-it
+
+[Agent's notes — max 30 lines]
+```
 
 ---
 

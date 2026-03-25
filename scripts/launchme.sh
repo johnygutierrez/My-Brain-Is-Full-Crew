@@ -118,6 +118,10 @@ for agent in "$REPO_DIR/agents/"*.md; do
 done
 success "Copied $AGENT_COUNT agents"
 
+# ── Create Meta/states/ for agent post-its ──────────────────────────────────
+mkdir -p "$VAULT_DIR/Meta/states"
+info "Created Meta/states/ (agent post-it directory)"
+
 # ── Copy references ─────────────────────────────────────────────────────────
 info "Creating .claude/references/ in vault..."
 mkdir -p "$VAULT_DIR/.claude/references"
@@ -140,28 +144,17 @@ for ref in "$REPO_DIR/references/"*.md; do
 done
 success "Copied references"
 
-# ── Generate and copy skills (for Cowork/Desktop) ───────────────────────────
+# ── Copy skills ──────────────────────────────────────────────────────────────
 SKILL_COUNT=0
-if command -v python3 >/dev/null 2>&1 && [[ -f "$REPO_DIR/scripts/generate-skills.py" ]]; then
-  info "Generating skills from agents..."
-  SKILLS_TMP="$(mktemp -d)"
-  SKILLS_DIR="$SKILLS_TMP" python3 "$REPO_DIR/scripts/generate-skills.py" >/dev/null 2>&1 || true
-
-  if [[ -d "$SKILLS_TMP" ]] && ls "$SKILLS_TMP"/*/SKILL.md >/dev/null 2>&1; then
-    info "Creating .claude/skills/ in vault..."
-    for skill_dir in "$SKILLS_TMP/"*/; do
-      skill_name="$(basename "$skill_dir")"
-      mkdir -p "$VAULT_DIR/.claude/skills/$skill_name"
-      cp "$skill_dir"* "$VAULT_DIR/.claude/skills/$skill_name/" 2>/dev/null || true
-      SKILL_COUNT=$((SKILL_COUNT + 1))
-    done
-    success "Copied $SKILL_COUNT skills"
-  fi
-
-  rm -rf "$SKILLS_TMP"
-else
-  warn "python3 not found — skipped skills generation (Cowork/Desktop won't have skills)"
-  warn "Install Python 3 and re-run this script to enable Cowork/Desktop support"
+if [[ -d "$REPO_DIR/skills" ]]; then
+  for skill_dir in "$REPO_DIR/skills/"*/; do
+    [[ -f "$skill_dir/SKILL.md" ]] || continue
+    skill_name="$(basename "$skill_dir")"
+    mkdir -p "$VAULT_DIR/.claude/skills/$skill_name"
+    cp "$skill_dir"SKILL.md "$VAULT_DIR/.claude/skills/$skill_name/"
+    SKILL_COUNT=$((SKILL_COUNT + 1))
+  done
+  success "Copied $SKILL_COUNT skills"
 fi
 
 # ── Copy CLAUDE.md ───────────────────────────────────────────────────────────

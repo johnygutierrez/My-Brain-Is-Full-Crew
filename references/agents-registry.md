@@ -57,3 +57,32 @@ Custom agents are created by the Architect through a conversational flow with th
 ### Priority
 
 Custom agents always have lower routing priority than the 8 core agents. The dispatcher checks custom agents only when no core agent matches the user's message. Among custom agents, the dispatcher uses the Input column to find the best match
+
+---
+
+## Skills Registry
+
+Skills handle complex, multi-step workflows extracted from agents. They are checked **before** agents by the dispatcher (higher priority). Skills run in the main conversation context via the Skill tool, preserving multi-turn state.
+
+| Skill | Source Agent | Triggers | Purpose | Status |
+|-------|-------------|----------|---------|--------|
+| `/onboarding` | architect | "initialize the vault", "set up the vault", "onboarding", "vault setup" | Full vault setup conversation | active |
+| `/create-agent` | architect | "create a new agent", "custom agent", "I need a new agent", "build an agent", "new crew member" | Custom agent creation (6-phase interview) | active |
+| `/manage-agent` | architect | "edit my agent", "update agent", "remove agent", "delete agent", "list agents", "show my agents" | Edit, remove, list custom agents | active |
+| `/defrag` | architect | "defragment the vault", "reorganize the vault", "structural maintenance", "vault defrag", "weekly defrag" | Weekly vault defragmentation (5-phase audit) | active |
+| `/email-triage` | postman | "check my email", "what's in my inbox", "process emails", "email triage", "anything urgent in email?" | Email scanning, priority scoring, classification | active |
+| `/meeting-prep` | postman | "prepare for meeting", "meeting prep", "brief me for the meeting", "get ready for the call" | Comprehensive meeting brief with context gathering | active |
+| `/weekly-agenda` | postman | "weekly agenda", "what's this week", "week overview", "plan my week" | Day-by-day week overview from calendar, email, vault | active |
+| `/deadline-radar` | postman | "deadline radar", "what are my deadlines", "this week's deadlines", "upcoming deadlines" | Unified deadline timeline with urgency grouping | active |
+| `/transcribe` | transcriber | "transcribe", "I have a recording", "process this audio", "meeting notes from recording", "summarize the call" | Audio/transcript processing with structured notes | active |
+| `/vault-audit` | librarian | "weekly review", "check the vault", "vault audit", "full audit", "vault health" | Full 7-phase vault audit | active |
+| `/deep-clean` | librarian | "deep clean", "deep cleanup", "thorough cleanup", "the vault is a mess" | Extended vault cleanup with stale content detection | active |
+| `/tag-garden` | librarian | "tag garden", "clean up tags", "tag cleanup", "tag audit" | Tag analysis: unused, orphan, near-duplicates | active |
+| `/inbox-triage` | sorter | "triage the inbox", "clean up the inbox", "sort my notes", "empty inbox", "file my notes", "process the inbox" | Inbox note processing, classification, and routing | active |
+
+### How Skills Are Routed
+
+1. The dispatcher checks the **skill routing table** (in `CLAUDE.md`) before the agent routing table
+2. If a trigger matches, the skill is invoked via the **Skill tool** — not the Agent tool
+3. If no skill matches, the dispatcher falls through to agent routing
+4. Skills can produce `### Suggested next agent` output, which the dispatcher handles using the same chaining rules as agents

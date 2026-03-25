@@ -150,6 +150,9 @@ done
 # These need special merge logic to preserve the "## Custom Agents" section.
 USER_MUTABLE_REFS="agents-registry.md agents.md"
 
+# ── Ensure Meta/states/ exists (agent post-its) ─────────────────────────────
+mkdir -p "$VAULT_DIR/Meta/states"
+
 REF_COUNT=0
 mkdir -p "$VAULT_DIR/.claude/references"
 : > "$VAULT_DIR/.claude/references/.core-manifest"
@@ -210,38 +213,28 @@ for ref in "$REPO_DIR/references/"*.md; do
     continue
   fi
 
-  if ! diff -q "$ref" "$vault_copy" >/dev/null 2>&1; then
+  if [[ ! -f "$vault_copy" ]] || ! diff -q "$ref" "$vault_copy" >/dev/null 2>&1; then
     cp "$ref" "$vault_copy"
     info "Updated reference: $name"
     REF_COUNT=$((REF_COUNT + 1))
   fi
 done
 
-# ── Regenerate and update skills ───────────────────────────────────────────
+# ── Update skills ────────────────────────────────────────────────────────────
 SKILL_COUNT=0
-if command -v python3 >/dev/null 2>&1 && [[ -f "$REPO_DIR/scripts/generate-skills.py" ]]; then
-  SKILLS_TMP="$(mktemp -d)"
-  SKILLS_DIR="$SKILLS_TMP" python3 "$REPO_DIR/scripts/generate-skills.py" >/dev/null 2>&1 || true
-
-  if [[ -d "$SKILLS_TMP" ]] && ls "$SKILLS_TMP"/*/SKILL.md >/dev/null 2>&1; then
-    for skill_dir in "$SKILLS_TMP/"*/; do
-      skill_name="$(basename "$skill_dir")"
-      src="$skill_dir/SKILL.md"
-      dst="$VAULT_DIR/.claude/skills/$skill_name/SKILL.md"
-      if [[ -f "$src" ]]; then
-        if [[ ! -f "$dst" ]] || ! diff -q "$src" "$dst" >/dev/null 2>&1; then
-          mkdir -p "$VAULT_DIR/.claude/skills/$skill_name"
-          cp "$src" "$dst"
-          info "Updated skill: $skill_name"
-          SKILL_COUNT=$((SKILL_COUNT + 1))
-        fi
-      fi
-    done
-  fi
-
-  rm -rf "$SKILLS_TMP"
-else
-  warn "python3 not found — skipped skills update"
+if [[ -d "$REPO_DIR/skills" ]]; then
+  for skill_dir in "$REPO_DIR/skills/"*/; do
+    [[ -f "$skill_dir/SKILL.md" ]] || continue
+    skill_name="$(basename "$skill_dir")"
+    src="$skill_dir/SKILL.md"
+    dst="$VAULT_DIR/.claude/skills/$skill_name/SKILL.md"
+    if [[ ! -f "$dst" ]] || ! diff -q "$src" "$dst" >/dev/null 2>&1; then
+      mkdir -p "$VAULT_DIR/.claude/skills/$skill_name"
+      cp "$src" "$dst"
+      info "Updated skill: $skill_name"
+      SKILL_COUNT=$((SKILL_COUNT + 1))
+    fi
+  done
 fi
 
 # ── Update CLAUDE.md ──────────────────────────────────────────────────────
