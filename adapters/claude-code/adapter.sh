@@ -211,10 +211,9 @@ adapter_translate_agents() {
     local caps; caps="$(parse_capabilities "$agent")"
 
     # Build tools allowlist by expanding each capability.
-    # read → Read (only); Glob and Grep are appended at the end if read is present.
-    local tools="" has_read=0
+    # read → Read, Glob, Grep; other capabilities follow.
+    local tools=""
     for cap in $caps; do
-      [[ "$cap" == "read" ]] && has_read=1
       local expansion; expansion="$(cc_capability_to_tools "$cap")"
       [[ -n "$expansion" ]] || continue
       for tool in $expansion; do
@@ -224,11 +223,11 @@ adapter_translate_agents() {
           tools="$tools, $tool"
         fi
       done
+      # If this was "read", immediately append Glob and Grep
+      if [[ "$cap" == "read" ]]; then
+        tools="$tools, Glob, Grep"
+      fi
     done
-    # Append Glob and Grep after all other tools when read capability is present
-    if [[ $has_read -eq 1 ]]; then
-      tools="$tools, Glob, Grep"
-    fi
 
     local out_file="$out_dir/$(basename "$agent")"
     {
