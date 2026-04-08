@@ -90,14 +90,39 @@ bash "$SCRIPT_DIR/build.sh" --framework "$FRAMEWORK"
 DIST_DIR="$REPO_DIR/dist/$FRAMEWORK"
 [[ -d "$DIST_DIR" ]] || die "Build did not produce $DIST_DIR"
 
+# ── Framework-specific install layout ────────────────────────────────────────
+case "$FRAMEWORK" in
+  claude-code)
+    DIST_COMPONENTS_DIR="$DIST_DIR/.claude"
+    VAULT_COMPONENTS_DIR="$VAULT_DIR/.claude"
+    DISPATCHER_SRC="$DIST_DIR/CLAUDE.md"
+    DISPATCHER_DST="$VAULT_DIR/CLAUDE.md"
+    MCP_SRC="$DIST_DIR/.mcp.json"
+    MCP_DST="$VAULT_DIR/.mcp.json"
+    HAS_PLUGINS=0
+    ;;
+  opencode)
+    DIST_COMPONENTS_DIR="$DIST_DIR/.opencode"
+    VAULT_COMPONENTS_DIR="$VAULT_DIR/.opencode"
+    DISPATCHER_SRC="$DIST_DIR/AGENTS.md"
+    DISPATCHER_DST="$VAULT_DIR/AGENTS.md"
+    MCP_SRC="$DIST_DIR/opencode.json"
+    MCP_DST="$VAULT_DIR/opencode.json"
+    HAS_PLUGINS=1
+    ;;
+  *)
+    die "Unknown framework: $FRAMEWORK (install layout not defined)"
+    ;;
+esac
+
 # ── Migrate legacy manifests (if any) ────────────────────────────────────────
 manifest_migrate
 
 # ── Deprecate agents/refs removed from repo (reinstall only) ─────────────────
 DEP_COUNT=0
 if [[ $EXISTING -eq 1 ]]; then
-  DEP_COUNT=$(deprecate_removed "agents"     "$DIST_DIR/.claude/agents"     "$VAULT_DIR/.claude/agents")
-  DEP_COUNT=$((DEP_COUNT + $(deprecate_removed "references" "$DIST_DIR/.claude/references" "$VAULT_DIR/.claude/references")))
+  DEP_COUNT=$(deprecate_removed "agents"     "$DIST_COMPONENTS_DIR/agents"     "$VAULT_COMPONENTS_DIR/agents")
+  DEP_COUNT=$((DEP_COUNT + $(deprecate_removed "references" "$DIST_COMPONENTS_DIR/references" "$VAULT_COMPONENTS_DIR/references")))
 fi
 
 # ── Ensure vault support dirs ─────────────────────────────────────────────────
@@ -105,19 +130,19 @@ mkdir -p "$VAULT_DIR/Meta/states"
 
 # ── Install components ────────────────────────────────────────────────────────
 info "Installing agents..."
-AGENT_COUNT=$(install_agents "$DIST_DIR/.claude/agents" "$VAULT_DIR/.claude/agents")
+AGENT_COUNT=$(install_agents "$DIST_COMPONENTS_DIR/agents" "$VAULT_COMPONENTS_DIR/agents")
 success "Agents: $AGENT_COUNT installed/updated"
 
 info "Installing references..."
-REF_COUNT=$(install_refs "$DIST_DIR/.claude/references" "$VAULT_DIR/.claude/references")
+REF_COUNT=$(install_refs "$DIST_COMPONENTS_DIR/references" "$VAULT_COMPONENTS_DIR/references")
 success "References: $REF_COUNT installed/updated"
 
 info "Installing skills..."
-SKILL_COUNT=$(install_skills "$DIST_DIR/.claude/skills" "$VAULT_DIR/.claude/skills")
+SKILL_COUNT=$(install_skills "$DIST_COMPONENTS_DIR/skills" "$VAULT_COMPONENTS_DIR/skills")
 success "Skills: $SKILL_COUNT installed/updated"
 
 info "Installing hooks..."
-HOOK_COUNT=$(install_hooks "$DIST_DIR/.claude/hooks" "$VAULT_DIR/.claude/hooks")
+HOOK_COUNT=$(install_hooks "$DIST_COMPONENTS_DIR/hooks" "$VAULT_COMPONENTS_DIR/hooks")
 success "Hooks: $HOOK_COUNT installed/updated"
 
 # ── Deprecate stale orchestra scripts on reinstall ──────────────────────────
@@ -158,10 +183,23 @@ fi
 
 install_settings   "$DIST_DIR/.claude/settings.json" "$VAULT_DIR/.claude"
 install_dispatcher "$DIST_DIR/CLAUDE.md"             "$VAULT_DIR/CLAUDE.md"
+PLUGIN_COUNT=0
+if [[ $HAS_PLUGINS -eq 1 && -d "$DIST_COMPONENTS_DIR/plugins" ]]; then
+  info "Installing plugins..."
+  PLUGIN_COUNT=$(install_plugins "$DIST_COMPONENTS_DIR/plugins" "$VAULT_COMPONENTS_DIR/plugins")
+  success "Plugins: $PLUGIN_COUNT installed/updated"
+fi
 
-# ── MCP servers ───────────────────────────────────────────────────────────────
-if [[ -f "$DIST_DIR/.mcp.json" ]]; then
-  copy_if_changed "$DIST_DIR/.mcp.json" "$VAULT_DIR/.mcp.json"
+# settings.json only exists for claude-code (hook config lives in the JS plugin on opencode)
+if [[ -f "$DIST_COMPONENTS_DIR/settings.json" ]]; then
+  install_settings "$DIST_COMPONENTS_DIR/settings.json" "$VAULT_COMPONENTS_DIR"
+fi
+
+install_dispatcher "$DISPATCHER_SRC" "$DISPATCHER_DST"
+
+# ── MCP / opencode.json ───────────────────────────────────────────────────────
+if [[ -f "$MCP_SRC" ]]; then
+  copy_if_changed "$MCP_SRC" "$MCP_DST"
 fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────

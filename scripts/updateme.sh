@@ -37,8 +37,13 @@ done
 print_banner "Update       "
 
 # ── Check vault has been set up ───────────────────────────────────────────────
-[[ -d "$VAULT_DIR/.claude/agents" ]] \
-  || die "No .claude/agents/ found in $VAULT_DIR — run launchme.sh first"
+case "$FRAMEWORK" in
+  claude-code) _SETUP_CHECK="$VAULT_DIR/.claude/agents" ;;
+  opencode)    _SETUP_CHECK="$VAULT_DIR/.opencode/agents" ;;
+  *)           _SETUP_CHECK="$VAULT_DIR/.claude/agents" ;;
+esac
+[[ -d "$_SETUP_CHECK" ]] \
+  || die "No agents/ found in $VAULT_DIR for framework '$FRAMEWORK' — run launchme.sh first"
 
 # ── Confirm ───────────────────────────────────────────────────────────────────
 echo -e "${BOLD}This will update core agents, skills, references, hooks, and CLAUDE.md.${NC}"
@@ -60,12 +65,37 @@ bash "$SCRIPT_DIR/build.sh" --framework "$FRAMEWORK"
 DIST_DIR="$REPO_DIR/dist/$FRAMEWORK"
 [[ -d "$DIST_DIR" ]] || die "Build did not produce $DIST_DIR"
 
+# ── Framework-specific install layout ────────────────────────────────────────
+case "$FRAMEWORK" in
+  claude-code)
+    DIST_COMPONENTS_DIR="$DIST_DIR/.claude"
+    VAULT_COMPONENTS_DIR="$VAULT_DIR/.claude"
+    DISPATCHER_SRC="$DIST_DIR/CLAUDE.md"
+    DISPATCHER_DST="$VAULT_DIR/CLAUDE.md"
+    MCP_SRC="$DIST_DIR/.mcp.json"
+    MCP_DST="$VAULT_DIR/.mcp.json"
+    HAS_PLUGINS=0
+    ;;
+  opencode)
+    DIST_COMPONENTS_DIR="$DIST_DIR/.opencode"
+    VAULT_COMPONENTS_DIR="$VAULT_DIR/.opencode"
+    DISPATCHER_SRC="$DIST_DIR/AGENTS.md"
+    DISPATCHER_DST="$VAULT_DIR/AGENTS.md"
+    MCP_SRC="$DIST_DIR/opencode.json"
+    MCP_DST="$VAULT_DIR/opencode.json"
+    HAS_PLUGINS=1
+    ;;
+  *)
+    die "Unknown framework: $FRAMEWORK (install layout not defined)"
+    ;;
+esac
+
 # ── Migrate legacy manifests (if any) ────────────────────────────────────────
 manifest_migrate
 
 # ── Deprecate agents/refs removed from repo ──────────────────────────────────
-DEP_COUNT=$(deprecate_removed "agents"     "$DIST_DIR/.claude/agents"     "$VAULT_DIR/.claude/agents")
-DEP_COUNT=$((DEP_COUNT + $(deprecate_removed "references" "$DIST_DIR/.claude/references" "$VAULT_DIR/.claude/references")))
+DEP_COUNT=$(deprecate_removed "agents"     "$DIST_COMPONENTS_DIR/agents"     "$VAULT_COMPONENTS_DIR/agents")
+DEP_COUNT=$((DEP_COUNT + $(deprecate_removed "references" "$DIST_COMPONENTS_DIR/references" "$VAULT_COMPONENTS_DIR/references")))
 
 # ── Ensure vault support dirs ─────────────────────────────────────────────────
 mkdir -p "$VAULT_DIR/Meta/states"
@@ -73,33 +103,43 @@ mkdir -p "$VAULT_DIR/Meta/states"
 # ── Update components (per-file logging enabled) ─────────────────────────────
 VERBOSE_COPY=1
 
-AGENT_COUNT=$(install_agents "$DIST_DIR/.claude/agents"     "$VAULT_DIR/.claude/agents")
-REF_COUNT=$(install_refs     "$DIST_DIR/.claude/references" "$VAULT_DIR/.claude/references")
-SKILL_COUNT=$(install_skills "$DIST_DIR/.claude/skills"     "$VAULT_DIR/.claude/skills")
-HOOK_COUNT=$(install_hooks   "$DIST_DIR/.claude/hooks"      "$VAULT_DIR/.claude/hooks")
+AGENT_COUNT=$(install_agents "$DIST_COMPONENTS_DIR/agents" "$VAULT_COMPONENTS_DIR/agents")
+REF_COUNT=$(install_refs     "$DIST_COMPONENTS_DIR/references" "$VAULT_COMPONENTS_DIR/references")
+SKILL_COUNT=$(install_skills "$DIST_COMPONENTS_DIR/skills" "$VAULT_COMPONENTS_DIR/skills")
+HOOK_COUNT=$(install_hooks   "$DIST_COMPONENTS_DIR/hooks"  "$VAULT_COMPONENTS_DIR/hooks")
 
-install_settings   "$DIST_DIR/.claude/settings.json" "$VAULT_DIR/.claude"
-SETTINGS_CHANGED=$_LAST_CHANGED
+PLUGIN_COUNT=0
+if [[ $HAS_PLUGINS -eq 1 && -d "$DIST_COMPONENTS_DIR/plugins" ]]; then
+  info "Installing plugins..."
+  PLUGIN_COUNT=$(install_plugins "$DIST_COMPONENTS_DIR/plugins" "$VAULT_COMPONENTS_DIR/plugins")
+  success "Plugins: $PLUGIN_COUNT installed/updated"
+fi
 
-install_dispatcher "$DIST_DIR/CLAUDE.md" "$VAULT_DIR/CLAUDE.md"
+SETTINGS_CHANGED=0
+if [[ -f "$DIST_COMPONENTS_DIR/settings.json" ]]; then
+  install_settings "$DIST_COMPONENTS_DIR/settings.json" "$VAULT_COMPONENTS_DIR"
+  SETTINGS_CHANGED=$_LAST_CHANGED
+fi
+
+install_dispatcher "$DISPATCHER_SRC" "$DISPATCHER_DST"
 CLAUDE_MD_CHANGED=$_LAST_CHANGED
 
-# ── MCP servers ───────────────────────────────────────────────────────────────
-if [[ -f "$DIST_DIR/.mcp.json" ]]; then
-  copy_if_changed "$DIST_DIR/.mcp.json" "$VAULT_DIR/.mcp.json"
+# ── MCP / opencode.json ───────────────────────────────────────────────────────
+if [[ -f "$MCP_SRC" ]]; then
+  copy_if_changed "$MCP_SRC" "$MCP_DST"
 fi
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
-TOTAL=$((AGENT_COUNT + REF_COUNT + SKILL_COUNT + HOOK_COUNT + SETTINGS_CHANGED + CLAUDE_MD_CHANGED))
+TOTAL=$((AGENT_COUNT + REF_COUNT + SKILL_COUNT + HOOK_COUNT + PLUGIN_COUNT + SETTINGS_CHANGED + CLAUDE_MD_CHANGED))
 if [[ $TOTAL -eq 0 && $DEP_COUNT -eq 0 ]]; then
   success "Everything is already up to date!"
 else
-  success "Updated $AGENT_COUNT agent(s), $SKILL_COUNT skill(s), $REF_COUNT reference(s), $HOOK_COUNT hook(s)"
+  success "Updated $AGENT_COUNT agent(s), $SKILL_COUNT skill(s), $REF_COUNT reference(s), $HOOK_COUNT hook(s)${PLUGIN_COUNT:+, $PLUGIN_COUNT plugin(s)}"
   [[ $SETTINGS_CHANGED -eq 1 ]] && info "settings.json updated (backup saved as settings.json.bak)"
-  [[ $CLAUDE_MD_CHANGED -eq 1 ]] && info "CLAUDE.md updated"
-  [[ $DEP_COUNT -gt 0 ]] && warn "$DEP_COUNT file(s) deprecated (moved to .claude/deprecated/)"
+  [[ $CLAUDE_MD_CHANGED -eq 1 ]] && info "Dispatcher file updated"
+  [[ $DEP_COUNT -gt 0 ]] && warn "$DEP_COUNT file(s) deprecated (moved to deprecated/)"
 fi
 echo ""
-echo -e "   ${DIM}Restart Claude Code to pick up the changes.${NC}"
+echo -e "   ${DIM}Restart $FRAMEWORK to pick up the changes.${NC}"
 echo ""

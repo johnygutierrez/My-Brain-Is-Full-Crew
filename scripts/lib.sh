@@ -376,6 +376,30 @@ install_hooks() {
   printf '%d' "$count"
 }
 
+# install_plugins <src_dir> <dst_dir>
+# Copies *.js plugin files from src to dst. Mirrors install_hooks but for
+# opencode plugins (the opencode framework expects JavaScript files under
+# .opencode/plugins/). Tracked in the manifest under key "plugins".
+install_plugins() {
+  local src_dir="$1" dst_dir="$2"
+  local count=0 manifest=()
+  [[ -d "$src_dir" ]] || { printf '0'; return 0; }
+  mkdir -p "$dst_dir"
+  for src in "$src_dir/"*.js; do
+    [[ -f "$src" ]] || continue
+    local name; name="$(basename "$src")"
+    local dst="$dst_dir/$name"
+    manifest+=("$name")
+    copy_if_changed "$src" "$dst"
+    if [[ $_LAST_CHANGED -eq 1 ]]; then
+      [[ $VERBOSE_COPY -eq 1 ]] && info "Updated plugin: $name" || true
+      count=$((count + 1))
+    fi
+  done
+  manifest_write "plugins" "${manifest[@]}"
+  printf '%d' "$count"
+}
+
 # install_settings <src_json> <dst_dir>
 # Always syncs settings.json from src to dst when they differ.
 # Creates a .bak of the previous version so users can recover custom entries.
