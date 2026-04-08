@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# =============================================================================
+# tests/run.sh — Bash test runner
+# =============================================================================
+# Discovers all *.test.sh files under tests/ and runs each function whose name
+# starts with "test_". Reports pass/fail counts and exits non-zero on failure.
+# =============================================================================
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PASS=0
+FAIL=0
+FAILED_TESTS=()
+
+for test_file in $(find "$SCRIPT_DIR" -name '*.test.sh' | sort); do
+  echo "── $(basename "$test_file") ──────────────────────"
+  # Source the test file to get its functions
+  source "$test_file"
+  # Run every function starting with test_
+  for fn in $(declare -F | awk '{print $3}' | grep '^test_'); do
+    if (set -e; "$fn") 2>&1 | sed 's/^/    /'; then
+      echo "  ✓ $fn"
+      PASS=$((PASS + 1))
+    else
+      echo "  ✗ $fn"
+      FAIL=$((FAIL + 1))
+      FAILED_TESTS+=("$fn")
+    fi
+    unset -f "$fn"
+  done
+done
+
+echo ""
+echo "==========================="
+echo "  Passed: $PASS"
+echo "  Failed: $FAIL"
+[[ $FAIL -gt 0 ]] && { echo "  Failed tests: ${FAILED_TESTS[*]}"; exit 1; }
+exit 0
