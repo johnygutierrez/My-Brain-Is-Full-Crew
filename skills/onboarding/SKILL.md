@@ -314,23 +314,23 @@ if [ -n "$AGENT_SOURCE" ]; then
 fi
 ```
 
-After copying, verify with `ls .claude/agents/` that the files are in place.
+After copying, verify with `ls .platform/agents/` that the files are in place.
 
 **If the agent source cannot be found automatically**, tell the user:
-> "I couldn't find the crew agent files automatically. Please copy the `.md` files from the `agents/` folder of the plugin into `.claude/agents/` inside your vault. I've created the folder for you — it's at `[vault path]/.claude/agents/`."
+> "I couldn't find the crew agent files automatically. Please copy the `.md` files from the `agents/` folder of the plugin into `.platform/agents/` inside your vault. I've created the folder for you — it's at `[vault path]/.platform/agents/`."
 
 **B2. Verify reference files**
 
-The crew agents read shared docs from `.claude/references/`. The `launchme.sh` script copies these automatically. Verify they exist:
+The crew agents read shared docs from `.platform/references/`. The `launchme.sh` script copies these automatically. Verify they exist:
 
 ```bash
 ls .claude/references/agents.md .claude/references/agent-orchestration.md .claude/references/agents-registry.md
 ```
 
 If they don't exist, create them from scratch using Write:
-- `.claude/references/agents.md` — one paragraph per agent describing its role and vault area
-- `.claude/references/agent-orchestration.md` — the inter-agent coordination protocol (dispatcher-driven)
-- `.claude/references/agents-registry.md` — the single source of truth for all agents (supports core + custom agents)
+- `.platform/references/agents.md` — one paragraph per agent describing its role and vault area
+- `.platform/references/agent-orchestration.md` — the inter-agent coordination protocol (dispatcher-driven)
+- `.platform/references/agents-registry.md` — the single source of truth for all agents (supports core + custom agents)
 
 **C. Email & Calendar integration (if integrations enabled)**
 
@@ -367,7 +367,7 @@ After completing B and C, explain clearly:
 
 > "Your crew is now vault-scoped.
 >
-> The agents are installed in `.claude/agents/` inside your vault. This means:
+> The agents are installed in `.platform/agents/` inside your vault. This means:
 > - When you open Claude Code in this vault folder, all your crew agents activate
 > - When you open Claude Code in any other project, no crew agents
 >
@@ -525,7 +525,7 @@ Create and maintain Templater-compatible templates. Each template:
 
 ### Core Templates
 
-Read `.claude/references/templates.md` for the full set of template definitions. If that file does not exist, create templates based on these specifications:
+Read `.platform/references/templates.md` for the full set of template definitions. If that file does not exist, create templates based on these specifications:
 
 **Meeting.md**
 ```markdown
@@ -1071,13 +1071,13 @@ If only Gmail was selected, omit the Google Calendar entry and vice versa.
 
 ## Crew Scoping
 
-After creating the vault structure, scope the crew agents to this vault only by copying them into `.claude/agents/` inside the vault. Only copy the agents the user selected during Phase 2 (Q7). The Architect is always copied.
+After creating the vault structure, scope the crew agents to this vault only by copying them into `.platform/agents/` inside the vault. Only copy the agents the user selected during Phase 2 (Q7). The Architect is always copied.
 
-After copying, verify with `ls .claude/agents/` that the files are in place.
+After copying, verify with `ls .platform/agents/` that the files are in place.
 
-If the agent source cannot be found automatically, instruct the user to copy the `.md` files manually from the `agents/` folder of the plugin into `.claude/agents/` inside their vault.
+If the agent source cannot be found automatically, instruct the user to copy the `.md` files manually from the `agents/` folder of the plugin into `.platform/agents/` inside their vault.
 
-Also verify that `.claude/references/` contains the shared docs (`agents.md`, `agent-orchestration.md`, `agents-registry.md`). If missing, create them.
+Also verify that `.platform/references/` contains the shared docs (`agents.md`, `agent-orchestration.md`, `agents-registry.md`). If missing, create them.
 
 ---
 

@@ -8,7 +8,7 @@
 # =============================================================================
 
 GEMINI_PLATFORM="gemini-cli"
-GEMINI_FW_DIR=".gemini"
+GEMINI_FW_DIR="gemini"
 GEMINI_DISPATCHER="GEMINI.md"
 
 # Capability → Gemini CLI tool names. Returns space-separated tool names.
@@ -72,18 +72,20 @@ adapter_translate_dispatcher() {
   [[ -f "$src" ]] || return 0
   mkdir -p "$dst"
   cp "$src" "$dst/$GEMINI_DISPATCHER"
+  rewrite_platform_paths "$dst/$GEMINI_DISPATCHER" "$GEMINI_FW_DIR" "$GEMINI_DISPATCHER"
 }
 
 # adapter_translate_references <source_refs_dir> <dest_root>
 adapter_translate_references() {
   local src="$1" dst="$2"
   [[ -d "$src" ]] || return 0
-  local out="$dst/$GEMINI_FW_DIR/references"
+  local out="$dst/.$GEMINI_FW_DIR/references"
   mkdir -p "$out"
   for f in "$src"/*.md; do
     [[ -f "$f" ]] || continue
     should_include "$f" "$GEMINI_PLATFORM" || continue
     cp "$f" "$out/"
+    rewrite_platform_paths "$out/$(basename "$f")" "$GEMINI_FW_DIR" "$GEMINI_DISPATCHER"
   done
 }
 
@@ -95,9 +97,10 @@ adapter_translate_skills() {
     [[ -f "${skill_dir}SKILL.md" ]] || continue
     should_include "${skill_dir}SKILL.md" "$GEMINI_PLATFORM" || continue
     local name; name="$(basename "$skill_dir")"
-    local out="$dst/$GEMINI_FW_DIR/skills/$name"
+    local out="$dst/.$GEMINI_FW_DIR/skills/$name"
     mkdir -p "$out"
     cp "${skill_dir}SKILL.md" "$out/SKILL.md"
+    rewrite_platform_paths "$out/SKILL.md" "$GEMINI_FW_DIR" "$GEMINI_DISPATCHER"
   done
 }
 
@@ -105,7 +108,7 @@ adapter_translate_skills() {
 adapter_translate_agents() {
   local src="$1" dst="$2"
   [[ -d "$src" ]] || return 0
-  local out_dir="$dst/$GEMINI_FW_DIR/agents"
+  local out_dir="$dst/.$GEMINI_FW_DIR/agents"
   mkdir -p "$out_dir"
 
   while IFS= read -r agent; do
@@ -147,6 +150,7 @@ adapter_translate_agents() {
       echo "---"
       agent_body "$agent"
     } > "$out_file"
+    rewrite_platform_paths "$out_file" "$GEMINI_FW_DIR" "$GEMINI_DISPATCHER"
   done < <(enumerate_agents "$src")
 }
 
@@ -155,7 +159,7 @@ adapter_translate_hooks() {
   local src="$1" dst="$2"
   [[ -d "$src" ]] || return 0
 
-  local hooks_out="$dst/$GEMINI_FW_DIR/hooks"
+  local hooks_out="$dst/.$GEMINI_FW_DIR/hooks"
   mkdir -p "$hooks_out"
 
   local tpl_dir; tpl_dir="$(dirname "${BASH_SOURCE[0]}")/templates"
@@ -177,6 +181,7 @@ adapter_translate_hooks() {
     # Copy the hook script
     cp "$src/$script" "$hooks_out/$script"
     chmod +x "$hooks_out/$script"
+    rewrite_platform_paths "$hooks_out/$script" "$GEMINI_FW_DIR" "$GEMINI_DISPATCHER"
 
     # Generate wrapper script from template
     local wrapper_name="${hook_name}-wrapper.sh"
@@ -199,7 +204,7 @@ adapter_translate_hooks() {
     fi
 
     # Add to hooks JSON
-    local hook_cmd="bash $GEMINI_FW_DIR/hooks/$wrapper_name"
+    local hook_cmd="bash .$GEMINI_FW_DIR/hooks/$wrapper_name"
     if [[ -n "$matcher" ]]; then
       hooks_json="$(echo "$hooks_json" | jq \
         --arg ev "$gemini_event" \
@@ -220,7 +225,7 @@ adapter_translate_hooks() {
     return 0
   fi
 
-  echo "$hooks_json" | jq '.' > "$dst/$GEMINI_FW_DIR/_hooks.json"
+  echo "$hooks_json" | jq '.' > "$dst/.$GEMINI_FW_DIR/_hooks.json"
 }
 
 # adapter_translate_mcp <source_mcp_dir> <dest_root>
@@ -229,7 +234,7 @@ adapter_translate_mcp() {
   local yaml="$src/servers.yaml"
   [[ -f "$yaml" ]] || return 0
 
-  mkdir -p "$dst/$GEMINI_FW_DIR"
+  mkdir -p "$dst/.$GEMINI_FW_DIR"
 
   local json='{}'
   local current_name="" current_cmd="" current_url="" current_type=""
@@ -268,14 +273,14 @@ adapter_translate_mcp() {
   done < "$yaml"
   _gemini_flush_mcp
 
-  echo "$json" | jq '.' > "$dst/$GEMINI_FW_DIR/_mcp.json"
+  echo "$json" | jq '.' > "$dst/.$GEMINI_FW_DIR/_mcp.json"
   unset -f _gemini_flush_mcp
 }
 
 # adapter_finalize <source_root> <dest_root>
 adapter_finalize() {
   local src="$1" dst="$2"
-  local gemini_dir="$dst/$GEMINI_FW_DIR"
+  local gemini_dir="$dst/.$GEMINI_FW_DIR"
   local hooks_tmp="$gemini_dir/_hooks.json"
   local mcp_tmp="$gemini_dir/_mcp.json"
   local settings="$gemini_dir/settings.json"

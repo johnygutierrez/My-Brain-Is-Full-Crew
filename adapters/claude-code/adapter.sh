@@ -8,6 +8,8 @@
 # =============================================================================
 
 CC_PLATFORM="claude-code"
+CC_FW_DIR="claude"
+CC_DISPATCHER="CLAUDE.md"
 
 # Capability → CC tools mapping. Each capability expands into one or more
 # Claude Code tool names. The expansion is order-preserving.
@@ -168,6 +170,7 @@ adapter_translate_hooks() {
     # Copy the bash script
     cp "$src/$script" "$out_dir/$script"
     chmod +x "$out_dir/$script"
+    rewrite_platform_paths "$out_dir/$script" "$CC_FW_DIR" "$CC_DISPATCHER"
 
     # Generate the wrapper
     local wrapper_file="$out_dir/${name}-wrapper.sh"
@@ -253,6 +256,7 @@ adapter_translate_agents() {
       echo "---"
       agent_body "$agent"
     } > "$out_file"
+    rewrite_platform_paths "$out_file" "$CC_FW_DIR" "$CC_DISPATCHER"
   done < <(enumerate_agents "$src")
 }
 
@@ -268,6 +272,7 @@ adapter_translate_skills() {
     local out="$dst/.claude/skills/$name"
     mkdir -p "$out"
     cp "${skill_dir}SKILL.md" "$out/SKILL.md"
+    rewrite_platform_paths "$out/SKILL.md" "$CC_FW_DIR" "$CC_DISPATCHER"
   done
 }
 
@@ -282,6 +287,7 @@ adapter_translate_references() {
     [[ -f "$f" ]] || continue
     should_include "$f" "$CC_PLATFORM" || continue
     cp "$f" "$out/"
+    rewrite_platform_paths "$out/$(basename "$f")" "$CC_FW_DIR" "$CC_DISPATCHER"
   done
 }
 
@@ -292,6 +298,7 @@ adapter_translate_dispatcher() {
   [[ -f "$src" ]] || return 0
   mkdir -p "$dst"
   cp "$src" "$dst/CLAUDE.md"
+  rewrite_platform_paths "$dst/CLAUDE.md" "$CC_FW_DIR" "$CC_DISPATCHER"
 }
 
 # adapter_build <source_dir> <dest_dir>

@@ -55,8 +55,8 @@ When you detect work that another agent should handle, include a `### Suggested 
 - **Context**: Notes in 03-Resources/Technology/ML/ share concepts (gradient descent, neural networks) but no MOC exists in MOC/ folder. Suggest creating MOC/Machine Learning.md.
 ```
 
-For the full orchestration protocol, see `.claude/references/agent-orchestration.md`.
-For the agent registry, see `.claude/references/agents-registry.md`.
+For the full orchestration protocol, see `.platform/references/agent-orchestration.md`.
+For the agent registry, see `.platform/references/agents-registry.md`.
 
 ### When to suggest a new agent
 

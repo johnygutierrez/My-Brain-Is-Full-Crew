@@ -64,16 +64,20 @@ fi
 # ── Check for existing installation ──────────────────────────────────────────
 EXISTING=0
 [[ -d "$VAULT_DIR/.claude" ]]    && EXISTING=1
-[[ -f "$VAULT_DIR/CLAUDE.md" ]]  && EXISTING=1
 [[ -d "$VAULT_DIR/.opencode" ]]  && EXISTING=1
+[[ -d "$VAULT_DIR/.gemini" ]]    && EXISTING=1
+[[ -f "$VAULT_DIR/CLAUDE.md" ]]  && EXISTING=1
 [[ -f "$VAULT_DIR/AGENTS.md" ]]  && EXISTING=1
+[[ -f "$VAULT_DIR/GEMINI.md" ]]  && EXISTING=1
 
 if [[ $EXISTING -eq 1 ]]; then
   warn "An existing installation was detected:"
   [[ -d "$VAULT_DIR/.claude" ]]   && warn "  .claude/ directory exists"
-  [[ -f "$VAULT_DIR/CLAUDE.md" ]] && warn "  CLAUDE.md exists"
   [[ -d "$VAULT_DIR/.opencode" ]] && warn "  .opencode/ directory exists"
+  [[ -d "$VAULT_DIR/.gemini" ]]   && warn "  .gemini/ directory exists"
+  [[ -f "$VAULT_DIR/CLAUDE.md" ]] && warn "  CLAUDE.md exists"
   [[ -f "$VAULT_DIR/AGENTS.md" ]] && warn "  AGENTS.md exists"
+  [[ -f "$VAULT_DIR/GEMINI.md" ]] && warn "  GEMINI.md exists"
   echo ""
   echo -e "   ${BOLD}The installer will overwrite core files. Custom agents are never deleted.${NC}"
   echo -e "   ${DIM}Your vault notes are never touched.${NC}"
@@ -195,14 +199,6 @@ if [[ -d "$REPO_DIR/orchestra" ]]; then
   success "Copied $ORCH_COUNT orchestra scripts to Meta/scripts/"
 fi
 
-# ── Copy CLAUDE.md ───────────────────────────────────────────────────────────
-if [[ -f "$REPO_DIR/CLAUDE.md" ]]; then
-  cp "$REPO_DIR/CLAUDE.md" "$VAULT_DIR/CLAUDE.md"
-  success "Copied CLAUDE.md"
-fi
-
-install_settings   "$DIST_DIR/.claude/settings.json" "$VAULT_DIR/.claude"
-install_dispatcher "$DIST_DIR/CLAUDE.md"             "$VAULT_DIR/CLAUDE.md"
 PLUGIN_COUNT=0
 if [[ $HAS_PLUGINS -eq 1 && -d "$DIST_COMPONENTS_DIR/plugins" ]]; then
   info "Installing plugins..."
@@ -257,11 +253,12 @@ if [[ $DEP_COUNT -gt 0 ]]; then
 fi
 echo ""
 echo -e "   ${BOLD}Next steps:${NC}"
-if [[ "$PLATFORM" == "opencode" ]]; then
-  echo -e "   1. Open opencode in your vault folder"
-else
-  echo -e "   1. Open Claude Code in your vault folder"
-fi
+case "$PLATFORM" in
+  claude-code) echo -e "   1. Open Claude Code in your vault folder" ;;
+  opencode)    echo -e "   1. Open OpenCode in your vault folder" ;;
+  gemini-cli)  echo -e "   1. Open Gemini CLI in your vault folder" ;;
+  *)           echo -e "   1. Open your agent platform in your vault folder" ;;
+esac
 echo -e "   2. Say: ${BOLD}\"Initialize my vault\"${NC}"
 echo -e "   3. The Architect will guide you through setup"
 echo ""

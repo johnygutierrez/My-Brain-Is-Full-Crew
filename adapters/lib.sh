@@ -20,19 +20,16 @@ MODEL_VOCAB="low mid high"
 
 # ── Path rewriting ───────────────────────────────────────────────────────────
 
-# rewrite_framework_paths <file> <target_fw_dir> <target_dispatcher>
-# Rewrites source-canonical framework path references in a text file in-place.
-# Source files use .claude/ and CLAUDE.md as the canonical form.
-# Call this after copying any text file from source to dist for non-CC frameworks.
-# No-op when target_fw_dir is "claude" (i.e. building for claude-code, whose
-# canonical output paths already match the source form — no rewrite needed).
-rewrite_framework_paths() {
-  local file="$1" tgt_dir="$2" tgt_dispatcher="$3"
-  [[ "$tgt_dir" == "claude" && "$tgt_dispatcher" == "CLAUDE.md" ]] && return 0
-  sed -i \
-    -e "s|\.claude/|.${tgt_dir}/|g" \
-    -e "s|CLAUDE\.md|${tgt_dispatcher}|g" \
-    "$file"
+# rewrite_platform_paths <file> <platform_dir> <dispatcher_name>
+# Rewrites platform-neutral path references in a text file.
+# Source files use .platform/ and DISPATCHER.md as neutral placeholders.
+# Each adapter calls this after copying any text file from source to dist,
+# passing its platform-specific directory name and dispatcher filename.
+rewrite_platform_paths() {
+  local file="$1" platform_dir="$2" dispatcher="$3"
+  local tmp; tmp="$(mktemp)"
+  sed "s|\.platform/|.${platform_dir}/|g; s|DISPATCHER\.md|${dispatcher}|g" "$file" > "$tmp"
+  mv "$tmp" "$file"
 }
 
 # ── Parsing helpers ──────────────────────────────────────────────────────────

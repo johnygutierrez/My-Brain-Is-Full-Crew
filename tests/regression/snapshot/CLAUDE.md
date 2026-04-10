@@ -4,7 +4,7 @@
 
 ## ABSOLUTE CONSTRAINT: ONLY skills and agents from THIS project
 
-Your crew consists of **13 skills** (in `.claude/skills/`) and **8 core agents** (in `.claude/agents/`). Claude Code auto-loads both at session start.
+Your crew consists of **14 skills** (in `.claude/skills/`) and **8 core agents** (in `.claude/agents/`). Your agent platform auto-loads both at session start.
 
 The 8 core agents are:
 
@@ -52,6 +52,7 @@ Skills handle complex, multi-step flows. **Check this table BEFORE the agent tab
 | 11 | `/deep-clean` | Extended vault cleanup: full audit plus stale content, outdated refs, redundant tags, template compliance. | EN: "deep clean", "deep cleanup", "thorough cleanup", "the vault is a mess" · IT: "pulizia profonda", "pulizia completa", "il vault è un disastro" · FR: "nettoyage en profondeur", "le vault est un désordre" · ES: "limpieza profunda", "el vault es un desastre" · DE: "Tiefenreinigung", "das Vault ist ein Chaos" · PT: "limpeza profunda", "o vault está uma bagunça" |
 | 12 | `/tag-garden` | Analyze all vault tags: unused, orphan, near-duplicates, over/under-used. Suggest merges. | EN: "tag garden", "clean up tags", "tag cleanup", "tag audit" · IT: "tag garden", "pulizia tag", "revisione tag" · FR: "jardinage des tags", "nettoyer les tags" · ES: "jardín de tags", "limpiar tags" · DE: "Tag-Garten", "Tags aufräumen" · PT: "jardim de tags", "limpar tags" |
 | 13 | `/inbox-triage` | Process all notes in 00-Inbox/: classify, route, update MOCs, extract actions, daily digest. | EN: "triage the inbox", "clean up the inbox", "sort my notes", "empty inbox", "file my notes", "process the inbox" · IT: "smista l'inbox", "svuota l'inbox", "ordina le note", "triage dell'inbox", "processa l'inbox" · FR: "trier la boîte de réception", "vider l'inbox", "classer mes notes" · ES: "clasificar la bandeja de entrada", "vaciar el inbox", "ordenar mis notas" · DE: "Inbox sortieren", "Inbox leeren", "Notizen einordnen" · PT: "triagem da inbox", "esvaziar a inbox", "organizar minhas notas" |
+| 14 | `/contact-sync` | Sync a person to Apple Contacts: search, create if missing, update if incomplete. Requires `apple-contacts` MCP. | EN: "sync contact", "add to contacts", "save contact", "update contact", "is this person in my contacts" · IT: "sincronizza contatto", "aggiungi ai contatti", "salva contatto", "aggiorna contatto" · FR: "synchroniser le contact", "ajouter aux contacts" · ES: "sincronizar contacto", "agregar a contactos" · DE: "Kontakt synchronisieren", "zu Kontakten hinzufuegen" · PT: "sincronizar contato", "adicionar aos contatos" |
 
 ---
 
@@ -151,7 +152,7 @@ Triggers: "quick check", "consistency report", "growth analytics", "stale conten
 
 ## 9. CUSTOM AGENTS
 
-Custom agents are created via the `/create-agent` skill and stored in `.claude/agents/`. They are auto-discovered by Claude Code like core agents. When a user message does not match any skill or core agent, check `.claude/references/agents-registry.md` for custom agents whose Input column matches the message. If a match is found, delegate to that agent.
+Custom agents are created via the `/create-agent` skill and stored in `.claude/agents/`. They are auto-discovered like core agents. When a user message does not match any skill or core agent, check `.claude/references/agents-registry.md` for custom agents whose Input column matches the message. If a match is found, delegate to that agent.
 
 ---
 
@@ -243,7 +244,7 @@ The script asks a couple of questions and copies everything into `.claude/` insi
 ```
 your-vault/
 ├── .claude/
-│   ├── agents/          ← 8 crew agents (auto-loaded by Claude Code)
+│   ├── agents/          ← 8 crew agents (auto-loaded at session start)
 │   └── references/      ← shared docs the agents read
 ├── .mcp.json            ← Gmail + Calendar (optional, if you chose yes)
 ├── My-Brain-Is-Full-Crew/  ← the repo (for updates)
@@ -252,7 +253,7 @@ your-vault/
 
 ### Step 4: Initialize
 
-1. Open Claude Code **inside your vault folder**
+1. Open your agent platform **inside your vault folder**
 2. Say: **"Initialize my vault"**
 3. The Architect agent runs onboarding — creates your folder structure, templates, and preferences
 
@@ -268,7 +269,7 @@ Only changed files are overwritten. Your vault notes are never touched.
 
 ## Requirements
 
-- **Claude Code** with a Claude Pro, Max, or Team subscription
+- A supported **agent platform** (see the README for details)
 - **Obsidian** (free) — [obsidian.md](https://obsidian.md)
 - **Gmail / Google Calendar** (optional) — only for the Postman agent
 
@@ -290,8 +291,7 @@ My-Brain-Is-Full-Crew/
 ├── scripts/
 │   ├── launchme.sh             First-time installer
 │   └── updateme.sh             Post-pull updater
-├── .claude-plugin/plugin.json  Plugin manifest (for --plugin-dir)
-├── .mcp.json                 MCP servers (Gmail, Google Calendar)
+├── mcp/servers.yaml          MCP server definitions (source of truth)
 ├── README.md
 ├── CONTRIBUTING.md
 └── LICENSE
@@ -303,9 +303,9 @@ All agent files are written in English. Agents automatically respond in whatever
 
 ## Architecture
 
-Each agent is defined in `.claude/agents/{name}.md` (in the destination vault) with YAML frontmatter (`name`, `description`, `tools`, `model`) and a full system prompt body. Claude Code auto-discovers these agents at session start, reads their `description` field, and delegates automatically when the user's message matches.
+Each agent is defined in `.claude/agents/{name}.md` (in the destination vault) with YAML frontmatter and a full system prompt body. The platform auto-discovers these agents at session start, reads their `description` field, and delegates automatically when the user's message matches.
 
-The CLAUDE.md routing rules REINFORCE this auto-delegation — they provide explicit priority ordering and trigger lists to ensure Claude delegates correctly.
+The dispatcher routing rules reinforce this auto-delegation — they provide explicit priority ordering and trigger lists to ensure correct delegation.
 
 Key design decisions:
 
@@ -315,20 +315,10 @@ Key design decisions:
 - All agents auto-activate based on their `description` field — just talk naturally
 - Agents reference shared docs at `.claude/references/`
 
-## Alternative: load as plugin (CLI)
-
-If you prefer not to clone into the vault:
+## Installation
 
 ```bash
-claude --plugin-dir /path/to/My-Brain-Is-Full-Crew
+bash scripts/launchme.sh --platform <claude-code|opencode|gemini-cli>
 ```
 
-This loads agents + MCP for the current session. You still need to run `launchme.sh` to set up `.claude/references/` in the vault.
-
-## Development
-
-```bash
-claude --plugin-dir ./
-```
-
-Use `/reload-plugins` to pick up changes without restarting.
+This builds the source files for your platform and installs them into your vault. See the README for platform-specific details.

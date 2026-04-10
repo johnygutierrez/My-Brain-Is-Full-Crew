@@ -79,7 +79,7 @@ adapter_translate_dispatcher() {
   [[ -f "$src" ]] || return 0
   mkdir -p "$dst"
   cp "$src" "$dst/AGENTS.md"
-  rewrite_framework_paths "$dst/AGENTS.md" "$OC_FW_DIR" "$OC_DISPATCHER"
+  rewrite_platform_paths "$dst/AGENTS.md" "$OC_FW_DIR" "$OC_DISPATCHER"
 }
 
 # adapter_translate_references <source_refs_dir> <dest_root>
@@ -93,7 +93,7 @@ adapter_translate_references() {
     [[ -f "$f" ]] || continue
     should_include "$f" "$OC_PLATFORM" || continue
     cp "$f" "$out/"
-    rewrite_framework_paths "$out/$(basename "$f")" "$OC_FW_DIR" "$OC_DISPATCHER"
+    rewrite_platform_paths "$out/$(basename "$f")" "$OC_FW_DIR" "$OC_DISPATCHER"
   done
 }
 
@@ -110,7 +110,7 @@ adapter_translate_skills() {
     local out="$dst/.opencode/skills/$name"
     mkdir -p "$out"
     cp "${skill_dir}SKILL.md" "$out/SKILL.md"
-    rewrite_framework_paths "$out/SKILL.md" "$OC_FW_DIR" "$OC_DISPATCHER"
+    rewrite_platform_paths "$out/SKILL.md" "$OC_FW_DIR" "$OC_DISPATCHER"
   done
 }
 
@@ -167,7 +167,7 @@ adapter_translate_agents() {
       echo ""
       agent_body "$agent"
     } > "$out_file"
-    rewrite_framework_paths "$out_file" "$OC_FW_DIR" "$OC_DISPATCHER"
+    rewrite_platform_paths "$out_file" "$OC_FW_DIR" "$OC_DISPATCHER"
   done < <(enumerate_agents "$src")
 }
 
@@ -231,7 +231,7 @@ adapter_translate_hooks() {
     [[ -f "$src/$script" ]] || continue
     cp "$src/$script" "$hooks_out/$script"
     chmod +x "$hooks_out/$script"
-    rewrite_framework_paths "$hooks_out/$script" "$OC_FW_DIR" "$OC_DISPATCHER"
+    rewrite_platform_paths "$hooks_out/$script" "$OC_FW_DIR" "$OC_DISPATCHER"
     have_any=1
   done < <(enumerate_hooks "$src")
 

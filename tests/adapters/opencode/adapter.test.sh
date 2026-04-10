@@ -9,7 +9,7 @@ test_oc_translate_dispatcher_renames_to_agents_md() {
   local dst; dst="$(mktemp -d)"
   cat > "$src/DISPATCHER.md" <<'EOF'
 # Dispatcher
-See .claude/agents/ for agents. Consult CLAUDE.md for rules.
+See .platform/agents/ for agents. Consult DISPATCHER.md for rules.
 EOF
   adapter_translate_dispatcher "$src/DISPATCHER.md" "$dst"
   local result=0
@@ -42,7 +42,7 @@ test_oc_translate_references_rewrites_paths() {
   local src; src="$(mktemp -d)"
   local dst; dst="$(mktemp -d)"
   mkdir -p "$src/references"
-  printf 'See .claude/agents/ and CLAUDE.md for details.\n' > "$src/references/guide.md"
+  printf 'See .platform/agents/ and DISPATCHER.md for details.\n' > "$src/references/guide.md"
   adapter_translate_references "$src/references" "$dst"
   local content; content="$(cat "$dst/.opencode/references/guide.md")"
   local result=0
@@ -88,7 +88,7 @@ test_oc_translate_skills_rewrites_paths() {
 name: create-agent
 description: Create a new agent
 ---
-Save to .claude/agents/ and update CLAUDE.md.
+Save to .platform/agents/ and update DISPATCHER.md.
 SKILLEOF
   adapter_translate_skills "$src/skills" "$dst"
   local content; content="$(cat "$dst/.opencode/skills/create-agent/SKILL.md")"
@@ -161,7 +161,7 @@ model: sonnet
 capabilities: [read, write]
 ---
 
-See .claude/references/agents.md and CLAUDE.md for context.
+See .platform/references/agents.md and DISPATCHER.md for context.
 EOF
   adapter_translate_agents "$src/agents" "$dst"
   local out="$dst/.opencode/agents/scribe.md"

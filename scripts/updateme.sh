@@ -41,7 +41,7 @@ case "$PLATFORM" in
   claude-code) _SETUP_CHECK="$VAULT_DIR/.claude/agents" ;;
   opencode)    _SETUP_CHECK="$VAULT_DIR/.opencode/agents" ;;
   gemini-cli)  _SETUP_CHECK="$VAULT_DIR/.gemini/agents" ;;
-  *)           _SETUP_CHECK="$VAULT_DIR/.claude/agents" ;;
+  *)           die "Unknown platform: $PLATFORM" ;;
 esac
 [[ -d "$_SETUP_CHECK" ]] \
   || die "No agents/ found in $VAULT_DIR for platform '$PLATFORM' — run launchme.sh first"
@@ -50,7 +50,8 @@ esac
 case "$PLATFORM" in
   opencode)    _DISP_NAME="AGENTS.md"; _FW_DIR_NAME="opencode" ;;
   gemini-cli)  _DISP_NAME="GEMINI.md"; _FW_DIR_NAME="gemini" ;;
-  *)           _DISP_NAME="CLAUDE.md"; _FW_DIR_NAME="claude" ;;
+  claude-code) _DISP_NAME="CLAUDE.md"; _FW_DIR_NAME="claude" ;;
+  *)           die "Unknown platform: $PLATFORM" ;;
 esac
 echo -e "${BOLD}This will update core agents, skills, references, hooks, and ${_DISP_NAME}.${NC}"
 echo -e "   ${DIM}Custom agents in .${_FW_DIR_NAME}/agents/ are never overwritten or deleted.${NC}"
@@ -144,7 +145,7 @@ if [[ -f "$DIST_COMPONENTS_DIR/settings.json" ]]; then
 fi
 
 install_dispatcher "$DISPATCHER_SRC" "$DISPATCHER_DST"
-CLAUDE_MD_CHANGED=$_LAST_CHANGED
+DISPATCHER_CHANGED=$_LAST_CHANGED
 
 # ── MCP / opencode.json ───────────────────────────────────────────────────────
 if [[ -f "$MCP_SRC" ]]; then
@@ -158,13 +159,13 @@ fi
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
-TOTAL=$((AGENT_COUNT + REF_COUNT + SKILL_COUNT + HOOK_COUNT + PLUGIN_COUNT + SETTINGS_CHANGED + CLAUDE_MD_CHANGED))
+TOTAL=$((AGENT_COUNT + REF_COUNT + SKILL_COUNT + HOOK_COUNT + PLUGIN_COUNT + SETTINGS_CHANGED + DISPATCHER_CHANGED))
 if [[ $TOTAL -eq 0 && $DEP_COUNT -eq 0 ]]; then
   success "Everything is already up to date!"
 else
   success "Updated $AGENT_COUNT agent(s), $SKILL_COUNT skill(s), $REF_COUNT reference(s), $HOOK_COUNT hook(s)${PLUGIN_COUNT:+, $PLUGIN_COUNT plugin(s)}"
   [[ $SETTINGS_CHANGED -eq 1 ]] && info "settings.json updated (backup saved as settings.json.bak)"
-  [[ $CLAUDE_MD_CHANGED -eq 1 ]] && info "Dispatcher file updated"
+  [[ $DISPATCHER_CHANGED -eq 1 ]] && info "Dispatcher file updated"
   [[ $DEP_COUNT -gt 0 ]] && warn "$DEP_COUNT file(s) deprecated (moved to deprecated/)"
 fi
 echo ""

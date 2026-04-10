@@ -206,35 +206,42 @@ test_enumerate_hooks() {
   [[ "$count" == "2" ]] || { echo "expected 2, got $count"; return 1; }
 }
 
-test_rewrite_framework_paths_opencode() {
-  local file; file="$(mktemp)"
-  printf 'See .claude/agents/ and .claude/references/foo.md\nAlso CLAUDE.md here.\n' > "$file"
-  rewrite_framework_paths "$file" "opencode" "AGENTS.md"
-  local result; result="$(cat "$file")"
-  rm "$file"
-  [[ "$result" == *".opencode/agents/"* ]]     || { echo "agents/ not rewritten: $result"; return 1; }
-  [[ "$result" == *".opencode/references/"* ]]  || { echo "references/ not rewritten: $result"; return 1; }
-  [[ "$result" == *"AGENTS.md"* ]]              || { echo "AGENTS.md not present: $result"; return 1; }
-  [[ "$result" != *".claude/"* ]]               || { echo ".claude/ still present: $result"; return 1; }
-  [[ "$result" != *"CLAUDE.md"* ]]              || { echo "CLAUDE.md still present: $result"; return 1; }
+test_rewrite_platform_paths_replaces_both() {
+  local tmp; tmp="$(mktemp)"
+  cat > "$tmp" <<'HEREDOC'
+See .platform/references/agent-orchestration.md for details.
+The dispatcher (DISPATCHER.md) handles routing.
+Files live in .platform/agents/ directory.
+HEREDOC
+  rewrite_platform_paths "$tmp" "claude" "CLAUDE.md"
+  local result=0
+  grep -q '\.claude/references/agent-orchestration.md' "$tmp" || { echo ".platform/ not rewritten"; result=1; }
+  grep -q 'CLAUDE.md' "$tmp" || { echo "DISPATCHER.md not rewritten"; result=1; }
+  grep -q '\.claude/agents/' "$tmp" || { echo "second .platform/ not rewritten"; result=1; }
+  grep -q '\.platform/' "$tmp" && { echo ".platform/ still present"; result=1; }
+  grep -q 'DISPATCHER\.md' "$tmp" && { echo "DISPATCHER.md still present"; result=1; }
+  rm -f "$tmp"
+  return $result
 }
 
-test_rewrite_framework_paths_noop_for_claude_code() {
-  local file; file="$(mktemp)"
-  local content='.claude/agents/ and CLAUDE.md'
-  printf '%s\n' "$content" > "$file"
-  rewrite_framework_paths "$file" "claude" "CLAUDE.md"
-  local result; result="$(cat "$file")"
-  rm "$file"
-  [[ "$result" == "$content" ]] || { echo "content was changed unexpectedly: $result"; return 1; }
+test_rewrite_platform_paths_opencode() {
+  local tmp; tmp="$(mktemp)"
+  echo 'See .platform/references/agents.md and DISPATCHER.md' > "$tmp"
+  rewrite_platform_paths "$tmp" "opencode" "AGENTS.md"
+  local result=0
+  grep -q '\.opencode/references/agents.md' "$tmp" || { echo "not rewritten to .opencode/"; result=1; }
+  grep -q 'AGENTS.md' "$tmp" || { echo "not rewritten to AGENTS.md"; result=1; }
+  rm -f "$tmp"
+  return $result
 }
 
-test_rewrite_framework_paths_preserves_product_name() {
-  local file; file="$(mktemp)"
-  printf 'Claude Code auto-loads agents from .claude/agents/\n' > "$file"
-  rewrite_framework_paths "$file" "opencode" "AGENTS.md"
-  local result; result="$(cat "$file")"
-  rm "$file"
-  [[ "$result" == *"Claude Code auto-loads"* ]] || { echo "product name was altered: $result"; return 1; }
-  [[ "$result" == *".opencode/agents/"* ]]       || { echo "path not rewritten: $result"; return 1; }
+test_rewrite_platform_paths_gemini() {
+  local tmp; tmp="$(mktemp)"
+  echo 'See .platform/agents/scribe.md and DISPATCHER.md' > "$tmp"
+  rewrite_platform_paths "$tmp" "gemini" "GEMINI.md"
+  local result=0
+  grep -q '\.gemini/agents/scribe.md' "$tmp" || { echo "not rewritten to .gemini/"; result=1; }
+  grep -q 'GEMINI.md' "$tmp" || { echo "not rewritten to GEMINI.md"; result=1; }
+  rm -f "$tmp"
+  return $result
 }
