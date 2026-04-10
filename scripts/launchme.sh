@@ -266,7 +266,7 @@ echo ""
 echo -e "   ${VAULT_DIR}/"
 FW_DIR_NAME="$(basename "$VAULT_COMPONENTS_DIR")"
 DISPATCHER_NAME="$(basename "$DISPATCHER_DST")"
-echo -e "   ├── .${FW_DIR_NAME}/"
+echo -e "   ├── ${FW_DIR_NAME}/"
 echo -e "   │   ├── agents/          ${DIM}← agents${NC}"
 echo -e "   │   ├── skills/          ${DIM}← skills${NC}"
 echo -e "   │   ├── hooks/           ${DIM}← hooks${NC}"
@@ -278,14 +278,16 @@ fi
 echo -e "   │   └── references/      ${DIM}← shared docs${NC}"
 echo -e "   ├── Meta/"
 echo -e "   │   └── scripts/         ${DIM}← ${ORCH_COUNT:-0} orchestra scripts${NC}"
-echo -e "   └── ${DISPATCHER_NAME}            ${DIM}← project instructions${NC}"
-if [[ "$MCP_ANSWER" =~ ^[Yy]$ ]]; then
-  echo -e "   └── .mcp.json            ${DIM}← Gmail + Calendar${NC}"
+if [[ -n "$MCP_SRC" && -f "$MCP_DST" ]]; then
+  echo -e "   ├── ${DISPATCHER_NAME}            ${DIM}← project instructions${NC}"
+  echo -e "   └── $(basename "$MCP_DST")        ${DIM}← MCP servers${NC}"
+else
+  echo -e "   └── ${DISPATCHER_NAME}            ${DIM}← project instructions${NC}"
 fi
 
 if [[ $DEP_COUNT -gt 0 ]]; then
   echo ""
-  warn "$DEP_COUNT file(s) were deprecated (moved to .${FW_DIR_NAME}/deprecated/)"
+  warn "$DEP_COUNT file(s) were deprecated (moved to ${FW_DIR_NAME}/deprecated/)"
 fi
 echo ""
 echo -e "   ${BOLD}Next steps:${NC}"
