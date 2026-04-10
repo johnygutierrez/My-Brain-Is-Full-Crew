@@ -114,6 +114,15 @@ case "$PLATFORM" in
     MCP_DST="$VAULT_DIR/opencode.json"
     HAS_PLUGINS=1
     ;;
+  gemini-cli)
+    DIST_COMPONENTS_DIR="$DIST_DIR/.gemini"
+    VAULT_COMPONENTS_DIR="$VAULT_DIR/.gemini"
+    DISPATCHER_SRC="$DIST_DIR/GEMINI.md"
+    DISPATCHER_DST="$VAULT_DIR/GEMINI.md"
+    MCP_SRC=""
+    MCP_DST=""
+    HAS_PLUGINS=0
+    ;;
   *)
     die "Unknown platform: $PLATFORM (install layout not defined)"
     ;;

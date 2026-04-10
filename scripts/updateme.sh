@@ -40,6 +40,7 @@ print_banner "Update       "
 case "$PLATFORM" in
   claude-code) _SETUP_CHECK="$VAULT_DIR/.claude/agents" ;;
   opencode)    _SETUP_CHECK="$VAULT_DIR/.opencode/agents" ;;
+  gemini-cli)  _SETUP_CHECK="$VAULT_DIR/.gemini/agents" ;;
   *)           _SETUP_CHECK="$VAULT_DIR/.claude/agents" ;;
 esac
 [[ -d "$_SETUP_CHECK" ]] \
@@ -47,8 +48,9 @@ esac
 
 # ── Confirm ───────────────────────────────────────────────────────────────────
 case "$PLATFORM" in
-  opencode) _DISP_NAME="AGENTS.md"; _FW_DIR_NAME="opencode" ;;
-  *)        _DISP_NAME="CLAUDE.md"; _FW_DIR_NAME="claude" ;;
+  opencode)    _DISP_NAME="AGENTS.md"; _FW_DIR_NAME="opencode" ;;
+  gemini-cli)  _DISP_NAME="GEMINI.md"; _FW_DIR_NAME="gemini" ;;
+  *)           _DISP_NAME="CLAUDE.md"; _FW_DIR_NAME="claude" ;;
 esac
 echo -e "${BOLD}This will update core agents, skills, references, hooks, and ${_DISP_NAME}.${NC}"
 echo -e "   ${DIM}Custom agents in .${_FW_DIR_NAME}/agents/ are never overwritten or deleted.${NC}"
@@ -88,6 +90,15 @@ case "$PLATFORM" in
     MCP_SRC="$DIST_DIR/opencode.json"
     MCP_DST="$VAULT_DIR/opencode.json"
     HAS_PLUGINS=1
+    ;;
+  gemini-cli)
+    DIST_COMPONENTS_DIR="$DIST_DIR/.gemini"
+    VAULT_COMPONENTS_DIR="$VAULT_DIR/.gemini"
+    DISPATCHER_SRC="$DIST_DIR/GEMINI.md"
+    DISPATCHER_DST="$VAULT_DIR/GEMINI.md"
+    MCP_SRC=""
+    MCP_DST=""
+    HAS_PLUGINS=0
     ;;
   *)
     die "Unknown platform: $PLATFORM (install layout not defined)"
