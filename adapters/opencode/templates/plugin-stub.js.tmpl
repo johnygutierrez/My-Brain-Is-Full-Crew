@@ -43,6 +43,8 @@ function buildPayload(eventName, input) {
     session_id: (input && input.sessionId) || "",
     cwd: (input && input.cwd) || process.cwd(),
     framework: "opencode",
+    platform_dir: ".opencode",
+    dispatcher_name: "AGENTS.md",
   };
 }
 

@@ -17,7 +17,9 @@ NEUTRAL=$(echo "$INPUT" | jq -c '{
   args: (.tool_input // {title: .title, message: .message}),
   session_id: (.session_id // ""),
   cwd: (.cwd // ""),
-  framework: "claude-code"
+  framework: "claude-code",
+  platform_dir: ".claude",
+  dispatcher_name: "CLAUDE.md"
 }')
 
 echo "$NEUTRAL" | bash "$HOOK_DIR/notify.sh"

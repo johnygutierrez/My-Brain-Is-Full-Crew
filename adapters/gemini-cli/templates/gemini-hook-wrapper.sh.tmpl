@@ -16,7 +16,9 @@ NEUTRAL=$(echo "$INPUT" | jq -c '{
   args: (.tool_input // {}),
   session_id: (env.GEMINI_SESSION_ID // ""),
   cwd: (env.GEMINI_CWD // env.GEMINI_PROJECT_DIR // ""),
-  framework: "gemini-cli"
+  framework: "gemini-cli",
+  platform_dir: ".gemini",
+  dispatcher_name: "GEMINI.md"
 }')
 
 echo "$NEUTRAL" | bash "$HOOK_DIR/__HOOK_NAME__.sh"

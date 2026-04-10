@@ -17,6 +17,7 @@
 # =============================================================================
 
 INPUT=$(cat)
+PLATFORM_DIR=$(echo "$INPUT" | jq -r '.platform_dir // ".claude"' 2>/dev/null)
 FILE=$(echo "$INPUT" | jq -r '.args.file_path // ""' 2>/dev/null)
 
 # Skip if we can't extract a path
@@ -26,7 +27,7 @@ FILE=$(echo "$INPUT" | jq -r '.args.file_path // ""' 2>/dev/null)
 [[ "$FILE" == *.md ]] || exit 0
 
 # Skip system files (agents, skills, references)
-[[ "$FILE" == *".claude/"* ]] && exit 0
+[[ "$FILE" == *"$PLATFORM_DIR/"* ]] && exit 0
 
 # Skip if file doesn't exist (deleted or moved)
 [[ -f "$FILE" ]] || exit 0
