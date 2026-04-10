@@ -397,6 +397,12 @@ git pull
 bash scripts/updateme.sh
 ```
 
+The updater **automatically detects** which platform is installed in your vault (by checking for a platform-specific folder). If you have multiple platforms installed, it asks you to choose which one to update. You can also specify explicitly with `--platform`:
+
+```bash
+bash scripts/updateme.sh --platform opencode
+```
+
 Only changed files are updated. Your vault notes are never touched.
 
 ---
@@ -494,6 +500,10 @@ If you want to:
 - **Just tell me what I'm doing wrong**: I'll listen
 
 ...PRs, issues, and honest feedback are all welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+### TO DO
+- [ ] Update the installer to auto-install the orchestra scripts (currently a manual copy-paste step)
+- [ ] Completely decouple the installer from the platform (currently has some platform-specific logic that could be moved to the adapters or to some kind of config file)
 
 ---
 

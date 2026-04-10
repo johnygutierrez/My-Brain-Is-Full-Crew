@@ -37,9 +37,6 @@ After installation, add the orchestra scripts to your agentic platform's permiss
 
 > If you already have a `permissions.allow` array, add the entries to it rather than replacing it.
 
-### TO DO:
-- [ ] Implement a more user-friendly installer that can automate this step, or at least print out the exact JSON to add, depending on the agentic platform in use.
-
 ## Scripts
 
 ### Hey Mailbox Scripts
