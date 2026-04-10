@@ -69,9 +69,16 @@ parse_capabilities() {
 # should_include <component_file> <framework>
 # Exit 0 if the component should be included in the given framework's build.
 # Exit 1 if the component's exclude: list contains the framework.
+# Supports both frontmatter-delimited files (agents, skills) and plain YAML
+# files (hook .yaml) — falls back to a direct key read if no frontmatter found.
 should_include() {
   local file="$1" framework="$2"
   local raw; raw="$(parse_frontmatter "$file" exclude)"
+  # If parse_frontmatter returned nothing, try reading exclude: as a plain YAML key
+  # (hook .yaml files don't have --- delimiters)
+  if [[ -z "$raw" ]]; then
+    raw="$(awk '/^exclude:/ { sub(/^exclude:[[:space:]]*/, ""); print; exit }' "$file")"
+  fi
   # Treat missing or empty exclude as "include"
   [[ -z "$raw" || "$raw" == "[]" ]] && return 0
   # Tokenize the list and check membership

@@ -250,27 +250,30 @@ adapter_translate_hooks() {
   # Pretty-print registry (2-space indent)
   local registry_pretty; registry_pretty="$(echo "$registry" | jq '.')"
 
-  # Use python3 to substitute placeholders — avoids awk/sed issues with
-  # multi-line JS content containing backslashes and ampersands.
+  # Substitute placeholders by reading the template line-by-line.
+  # We avoid sed/awk gsub because the replacement strings (JS code, JSON)
+  # contain backslashes and ampersands that break regex replacement.
   local out="$plugins_out/mbifc-hooks.js"
   local executor_file="$tpl_dir/bash-executor.js"
   local stub_file="$tpl_dir/plugin-stub.js.tmpl"
-  python3 - "$stub_file" "$executor_file" "$out" "$registry_pretty" <<'PYEOF'
-import sys
-
-stub_path, executor_path, out_path, registry = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-
-with open(stub_path, 'r') as f:
-    content = f.read()
-with open(executor_path, 'r') as f:
-    executor = f.read()
-
-content = content.replace('__BASH_EXECUTOR__', executor)
-content = content.replace('__HOOK_REGISTRY__', registry)
-
-with open(out_path, 'w') as f:
-    f.write(content)
-PYEOF
+  while IFS= read -r line; do
+    case "$line" in
+      *__BASH_EXECUTOR__*)
+        cat "$executor_file"
+        ;;
+      *__HOOK_REGISTRY__*)
+        # Replace the placeholder within the line (preserves "const HOOKS = " prefix)
+        local prefix="${line%%__HOOK_REGISTRY__*}"
+        local suffix="${line##*__HOOK_REGISTRY__}"
+        printf '%s' "$prefix"
+        printf '%s' "$registry_pretty"
+        printf '%s\n' "$suffix"
+        ;;
+      *)
+        printf '%s\n' "$line"
+        ;;
+    esac
+  done < "$stub_file" > "$out"
 }
 
 # adapter_translate_mcp <source_mcp_dir> <dest_root>
