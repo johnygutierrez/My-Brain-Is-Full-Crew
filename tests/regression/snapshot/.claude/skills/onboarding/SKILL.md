@@ -284,7 +284,7 @@ Summarize everything the user has told you. Ask them to confirm or correct anyth
 
 **B. Scope the crew to this vault only (critical step)**
 
-This step ensures the crew agents activate **only when Claude Code is opened in this vault** — not in other projects or coding sessions.
+This step ensures the crew agents activate **only when your agent platform is opened in this vault** — not in other projects or coding sessions.
 
 Use Bash to:
 
@@ -368,10 +368,8 @@ After completing B and C, explain clearly:
 > "Your crew is now vault-scoped.
 >
 > The agents are installed in `.claude/agents/` inside your vault. This means:
-> - When you open Claude Code in this vault folder, all your crew agents activate
-> - When you open Claude Code in any other project, no crew agents
->
-> **One thing to check:** if you installed the plugin as a 'Personal plugin' in Claude Code Desktop, the agents will also be available in all your other projects. To keep things clean, you can remove it from Personal plugins — your vault now has its own local copy that takes priority anyway."
+> - When you open your agent platform in this vault folder, all your crew agents activate
+> - When you open it in any other project, no crew agents"
 
 ---
 

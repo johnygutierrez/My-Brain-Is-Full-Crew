@@ -13,16 +13,17 @@ Found that an agent behaves weirdly, gives poor results, or misses edge cases?
 1. Open an issue describing the problem with a concrete example
 2. Or submit a PR with the improvement
 
-Agent files live in `agents/<agent-name>.md`. The plugin manifest is at `.claude-plugin/plugin.json`. All agents are written in English, and they automatically respond in the user's language.
+Agent source files live in `agents/<agent-name>.md`. They use a platform-neutral format with `capabilities:` (not tool names) and `model`: `low`/`mid`/`high` (not platform-specific model names). The build system translates these into each platform's native format. All agents are written in English, and they automatically respond in the user's language.
 
-To test your changes locally:
+To test your changes locally, build and install into a test vault:
 ```bash
-claude --plugin-dir ./
+bash scripts/build.sh --platform claude-code   # or gemini-cli, opencode, etc.
+bash scripts/launchme.sh --platform claude-code --target /tmp/test-vault
 ```
 
 ### Propose a new core crew member
 
-> **Note**: Users can create custom agents directly within their vault by saying "create a new agent" in Claude Code. The Architect handles the entire process. The section below is for proposing new *core* agents that ship with the project.
+> **Note**: Users can create custom agents directly within their vault by saying "create a new agent". The Architect handles the entire process. The section below is for proposing new *core* agents that ship with the project.
 
 Have an idea for a new core agent? Open an issue with:
 
@@ -50,7 +51,7 @@ Open an issue with:
 
 ## Agent file structure
 
-Each agent is a Claude Code **subagent**, a standalone `.md` file with YAML frontmatter:
+Each agent is a standalone `.md` file with YAML frontmatter in the **source format** (platform-neutral):
 
 ```yaml
 ---
@@ -59,8 +60,8 @@ description: >
   One paragraph description used for auto-triggering.
   Include trigger phrases in multiple languages (English, Italian, French,
   Spanish, German, Portuguese) for maximum discoverability.
-tools: Read, Write, Edit, Glob, Grep
-model: sonnet
+capabilities: [read, write, edit]
+model: mid
 ---
 
 # <Display Name> — <Subtitle>
@@ -68,15 +69,17 @@ model: sonnet
 [Agent instructions in English]
 ```
 
-### Frontmatter fields
+The build system translates `capabilities` into platform-specific tool lists or permission blocks, and `model` into platform-specific model names (e.g., `mid` → `sonnet` for Claude Code, `gemini-2.5-flash` for Gemini CLI).
+
+### Frontmatter fields (source format)
 
 | Field | Required | Description |
 |-------|----------|-------------|
 | `name` | Yes | Lowercase, hyphens only (e.g., `my-agent`) |
-| `description` | Yes | When Claude should auto-invoke this agent. Include multilingual triggers |
-| `tools` | Yes | Comma-separated list of allowed tools |
-| `disallowedTools` | No | Tools to explicitly deny (e.g., `Write, Edit` for read-only agents) |
-| `model` | No | `sonnet`, `opus`, or `haiku` (default: inherits from parent) |
+| `description` | Yes | When the platform should auto-invoke this agent. Include multilingual triggers |
+| `capabilities` | Yes | List from: `read`, `write`, `edit`, `bash`, `webfetch`, `websearch`, `task`, `todo` |
+| `model` | No | `low`, `mid`, or `high` (default: inherits from parent) |
+| `exclude` | No | List of platforms to exclude this agent from (e.g., `[opencode]`) |
 
 ### Key rules for agent files
 
@@ -97,7 +100,7 @@ Agents coordinate through a dispatcher-driven orchestration system. When an agen
 
 ## Custom agents vs. core agents
 
-**Custom agents** are created by users within their own vault using the Architect agent. They live in the user's `.claude/agents/` directory and are personal to that vault. Custom agents:
+**Custom agents** are created by users within their own vault using the Architect agent. They live in the user's platform agents directory (e.g., `.claude/agents/`) and are personal to that vault. Custom agents:
 - Are created through a conversational flow with the Architect
 - Follow the same file structure and conventions as core agents
 - Participate in the dispatcher's routing and orchestration system

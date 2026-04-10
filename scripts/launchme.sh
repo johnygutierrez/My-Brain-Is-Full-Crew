@@ -7,8 +7,8 @@
 #   cd /path/to/your-vault/My-Brain-Is-Full-Crew
 #   bash scripts/launchme.sh
 #
-# It copies agents, skills, references, hooks, and settings into the vault's
-# .claude/ directory.
+# It builds and copies agents, skills, references, hooks, and settings into
+# the vault's platform directory.
 #
 # Options:
 #   --platform <name>    Platform to build for (interactive selection if omitted)

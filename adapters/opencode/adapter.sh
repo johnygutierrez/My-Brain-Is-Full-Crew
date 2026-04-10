@@ -73,7 +73,7 @@ oc_model_to_provider() {
 
 # adapter_translate_dispatcher <source_dispatcher_md> <dest_dir>
 # Copies the source DISPATCHER.md to dest_dir/AGENTS.md (opencode's vault-root
-# dispatcher filename). Rewrites .claude/ and CLAUDE.md references in the body.
+# dispatcher filename). Rewrites .platform/ and DISPATCHER.md to opencode paths.
 adapter_translate_dispatcher() {
   local src="$1" dst="$2"
   [[ -f "$src" ]] || return 0

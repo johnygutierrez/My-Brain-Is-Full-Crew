@@ -21,7 +21,7 @@ description: >
   {{One-paragraph description of what the agent does, written in the user's language.}}
   Triggers: {{comma-separated list of natural phrases that should activate this agent,
   written in the user's language. Include at least 6-8 trigger phrases.}}
-# NOTE: The description is what Claude Code reads to auto-trigger the agent.
+# NOTE: The description is what the platform reads to auto-trigger the agent.
 # Write it in the language the user speaks. Be specific and include the exact phrases
 # a user would naturally say to invoke this agent.
 

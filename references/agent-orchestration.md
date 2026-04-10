@@ -135,7 +135,7 @@ If the dispatcher would need a 4th agent, it:
 Custom agents are created by the Architect and stored in `.platform/agents/`. They participate fully in the orchestration system:
 
 1. **Creation**: the Architect creates the agent file, adds a row to `agents-registry.md`, and updates `agents.md`
-2. **Discovery**: Claude Code auto-discovers the agent from its frontmatter in `.platform/agents/`
+2. **Discovery**: the platform auto-discovers the agent from its frontmatter in `.platform/agents/`
 3. **Routing**: the dispatcher checks `agents-registry.md` for custom agents when no core agent matches
 4. **Chaining**: custom agents can suggest (and be suggested by) any other agent, following the same protocol
 5. **Maintenance**: the Librarian audits custom agents during vault health checks. For every row in agents-registry.md with status=active, the corresponding file must exist in `.platform/agents/`

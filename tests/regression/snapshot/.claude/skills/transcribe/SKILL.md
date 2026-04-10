@@ -96,7 +96,7 @@ Skip questions the user has already answered in their message. If the user says 
 
 ### If the user provides a raw audio file:
 
-1. Inform the user that Claude cannot directly transcribe audio — suggest using Whisper (local), Otter.ai, or the Obsidian Audio Notes plugin
+1. Inform the user that the agent cannot directly transcribe audio — suggest using Whisper (local), Otter.ai, or the Obsidian Audio Notes plugin
 2. Offer to process the transcript once they have it
 3. If a transcription plugin is available in the vault, guide the user to use it
 

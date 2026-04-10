@@ -48,7 +48,7 @@ Custom agents are created by the Architect through a conversational flow with th
 1. The user asks the Architect to create a new agent (or an existing agent suggests one via `### Suggested new agent`)
 2. The Architect conducts a detailed conversation to understand requirements
 3. The Architect generates the agent file in `.platform/agents/`, adds a row to the Registry table above, and updates `agents.md`
-4. Claude Code auto-discovers the new agent from its frontmatter
+4. The platform auto-discovers the new agent from its frontmatter
 
 ### Naming Rules
 

@@ -428,7 +428,7 @@ install_settings() {
 }
 
 # install_dispatcher <src_file> <dst_path>
-# Copies the source dispatcher file (CLAUDE.md or AGENTS.md) to the destination.
+# Copies the source dispatcher file to the destination.
 # Sets _LAST_CHANGED.
 install_dispatcher() {
   local src="$1" dst="$2"

@@ -284,33 +284,33 @@ Summarize everything the user has told you. Ask them to confirm or correct anyth
 
 **B. Scope the crew to this vault only (critical step)**
 
-This step ensures the crew agents activate **only when Claude Code is opened in this vault** — not in other projects or coding sessions.
+This step ensures the crew agents activate **only when your agent platform is opened in this vault** — not in other projects or coding sessions.
 
 Use Bash to:
 
 ```bash
 # 1. Create the project-scoped agents directory inside the vault
-mkdir -p .claude/agents
+mkdir -p .platform/agents
 
 # 2. Find where the crew agent files are currently installed
 # Try user-scope location first, then common plugin cache paths
 AGENT_SOURCE=""
-if ls ~/.claude/agents/architect.md 2>/dev/null; then
-  AGENT_SOURCE=~/.claude/agents
+if ls ~/.platform/agents/architect.md 2>/dev/null; then
+  AGENT_SOURCE=~/.platform/agents
 fi
 
 # 3. Copy only the agents the user selected during onboarding
 # (copy all if the user selected "all agents")
 if [ -n "$AGENT_SOURCE" ]; then
-  cp "$AGENT_SOURCE"/architect.md .claude/agents/
+  cp "$AGENT_SOURCE"/architect.md .platform/agents/
   # Copy each selected agent — replace the list based on Phase 2 answers:
-  # cp "$AGENT_SOURCE"/scribe.md .claude/agents/
-  # cp "$AGENT_SOURCE"/sorter.md .claude/agents/
-  # cp "$AGENT_SOURCE"/seeker.md .claude/agents/
-  # cp "$AGENT_SOURCE"/connector.md .claude/agents/
-  # cp "$AGENT_SOURCE"/librarian.md .claude/agents/
-  # cp "$AGENT_SOURCE"/transcriber.md .claude/agents/
-  # cp "$AGENT_SOURCE"/postman.md .claude/agents/
+  # cp "$AGENT_SOURCE"/scribe.md .platform/agents/
+  # cp "$AGENT_SOURCE"/sorter.md .platform/agents/
+  # cp "$AGENT_SOURCE"/seeker.md .platform/agents/
+  # cp "$AGENT_SOURCE"/connector.md .platform/agents/
+  # cp "$AGENT_SOURCE"/librarian.md .platform/agents/
+  # cp "$AGENT_SOURCE"/transcriber.md .platform/agents/
+  # cp "$AGENT_SOURCE"/postman.md .platform/agents/
 fi
 ```
 
@@ -324,7 +324,7 @@ After copying, verify with `ls .platform/agents/` that the files are in place.
 The crew agents read shared docs from `.platform/references/`. The `launchme.sh` script copies these automatically. Verify they exist:
 
 ```bash
-ls .claude/references/agents.md .claude/references/agent-orchestration.md .claude/references/agents-registry.md
+ls .platform/references/agents.md .platform/references/agent-orchestration.md .platform/references/agents-registry.md
 ```
 
 If they don't exist, create them from scratch using Write:
@@ -368,10 +368,8 @@ After completing B and C, explain clearly:
 > "Your crew is now vault-scoped.
 >
 > The agents are installed in `.platform/agents/` inside your vault. This means:
-> - When you open Claude Code in this vault folder, all your crew agents activate
-> - When you open Claude Code in any other project, no crew agents
->
-> **One thing to check:** if you installed the plugin as a 'Personal plugin' in Claude Code Desktop, the agents will also be available in all your other projects. To keep things clean, you can remove it from Personal plugins — your vault now has its own local copy that takes priority anyway."
+> - When you open your agent platform in this vault folder, all your crew agents activate
+> - When you open it in any other project, no crew agents"
 
 ---
 
@@ -1128,8 +1126,8 @@ Before telling the user onboarding is complete, verify ALL of the following:
 [ ] MOC/Index.md exists and links to all area MOCs
 [ ] Templates/ has all core templates
 [ ] Templates/ has area-specific templates for selected areas
-[ ] .claude/agents/ has the selected agent files
-[ ] .claude/references/ has shared docs
+[ ] .platform/agents/ has the selected agent files
+[ ] .platform/references/ has shared docs
 [ ] .mcp.json exists (if integrations were enabled)
 [ ] Welcome note exists in 00-Inbox/
 [ ] Essential Obsidian plugins were recommended to the user
