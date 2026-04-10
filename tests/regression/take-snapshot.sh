@@ -15,7 +15,13 @@ DIST_DIR="$REPO_DIR/dist/claude-code"
 # Replace snapshot with current build output
 rm -rf "$SNAPSHOT_DIR"
 mkdir -p "$SNAPSHOT_DIR"
-cp -r "$DIST_DIR"/* "$DIST_DIR"/.claude "$DIST_DIR"/.mcp.json "$SNAPSHOT_DIR/" 2>/dev/null || true
+
+# Required artifacts — fail loudly if missing
+cp -r "$DIST_DIR/.claude" "$SNAPSHOT_DIR/.claude"
+cp "$DIST_DIR/CLAUDE.md" "$SNAPSHOT_DIR/CLAUDE.md"
+
+# Optional artifacts — copy if present
+[[ -f "$DIST_DIR/.mcp.json" ]] && cp "$DIST_DIR/.mcp.json" "$SNAPSHOT_DIR/.mcp.json"
 
 # Remove non-deterministic / install-only artifacts
 rm -f "$SNAPSHOT_DIR/.claude/.mbifc-manifest"

@@ -3,8 +3,9 @@
 # adapters/opencode/config-merge.sh — JSON config merge for opencode.json
 # =============================================================================
 # Merges a built opencode.json with an existing one in the vault, preserving
-# user keys and formatting. Only the "mcp" key is managed; everything else
-# belongs to the user.
+# user keys and indentation style (2-space, 4-space, or tab). Only the "mcp"
+# key is managed; everything else belongs to the user. Note: jq normalizes
+# whitespace and may reorder keys within objects.
 #
 # Sourced by the opencode adapter. Requires jq.
 # =============================================================================

@@ -85,6 +85,12 @@ should_include() {
 # parse_hook_yaml <hook_yaml_file>
 # Emits key=value lines for each top-level scalar AND for trigger fields.
 # Output keys: name, script, event, match-tool (space-separated tokens), exclude.
+#
+# NOTE: This flattens all triggers into a single stream. When a hook has
+# multiple triggers, the association between event and match-tool is lost.
+# Currently all hooks use a single trigger, so this is not an issue in
+# practice. If multi-trigger hooks are needed, this output format must be
+# changed to emit delimited records (one per trigger).
 parse_hook_yaml() {
   local file="$1"
   awk '
