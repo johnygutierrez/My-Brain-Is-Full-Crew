@@ -205,3 +205,36 @@ test_enumerate_hooks() {
   rm -rf "$dir"
   [[ "$count" == "2" ]] || { echo "expected 2, got $count"; return 1; }
 }
+
+test_rewrite_framework_paths_opencode() {
+  local file; file="$(mktemp)"
+  printf 'See .claude/agents/ and .claude/references/foo.md\nAlso CLAUDE.md here.\n' > "$file"
+  rewrite_framework_paths "$file" "opencode" "AGENTS.md"
+  local result; result="$(cat "$file")"
+  rm "$file"
+  [[ "$result" == *".opencode/agents/"* ]]     || { echo "agents/ not rewritten: $result"; return 1; }
+  [[ "$result" == *".opencode/references/"* ]]  || { echo "references/ not rewritten: $result"; return 1; }
+  [[ "$result" == *"AGENTS.md"* ]]              || { echo "AGENTS.md not present: $result"; return 1; }
+  [[ "$result" != *".claude/"* ]]               || { echo ".claude/ still present: $result"; return 1; }
+  [[ "$result" != *"CLAUDE.md"* ]]              || { echo "CLAUDE.md still present: $result"; return 1; }
+}
+
+test_rewrite_framework_paths_noop_for_claude_code() {
+  local file; file="$(mktemp)"
+  local content='.claude/agents/ and CLAUDE.md'
+  printf '%s\n' "$content" > "$file"
+  rewrite_framework_paths "$file" "claude" "CLAUDE.md"
+  local result; result="$(cat "$file")"
+  rm "$file"
+  [[ "$result" == "$content" ]] || { echo "content was changed unexpectedly: $result"; return 1; }
+}
+
+test_rewrite_framework_paths_preserves_product_name() {
+  local file; file="$(mktemp)"
+  printf 'Claude Code auto-loads agents from .claude/agents/\n' > "$file"
+  rewrite_framework_paths "$file" "opencode" "AGENTS.md"
+  local result; result="$(cat "$file")"
+  rm "$file"
+  [[ "$result" == *"Claude Code auto-loads"* ]] || { echo "product name was altered: $result"; return 1; }
+  [[ "$result" == *".opencode/agents/"* ]]       || { echo "path not rewritten: $result"; return 1; }
+}

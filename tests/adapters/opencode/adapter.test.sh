@@ -9,13 +9,17 @@ test_oc_translate_dispatcher_renames_to_agents_md() {
   local dst; dst="$(mktemp -d)"
   cat > "$src/DISPATCHER.md" <<'EOF'
 # Dispatcher
-Some content
+See .claude/agents/ for agents. Consult CLAUDE.md for rules.
 EOF
   adapter_translate_dispatcher "$src/DISPATCHER.md" "$dst"
   local result=0
-  [[ -f "$dst/AGENTS.md" ]] || { echo "AGENTS.md not created"; result=1; }
+  [[ -f "$dst/AGENTS.md" ]]  || { echo "AGENTS.md not created"; result=1; }
   [[ ! -f "$dst/CLAUDE.md" ]] || { echo "CLAUDE.md should not exist"; result=1; }
-  [[ "$(cat "$dst/AGENTS.md")" == "$(cat "$src/DISPATCHER.md")" ]] || { echo "content mismatch"; result=1; }
+  local content; content="$(cat "$dst/AGENTS.md")"
+  [[ "$content" == *".opencode/agents/"* ]] || { echo ".opencode/agents/ not found: $content"; result=1; }
+  [[ "$content" == *"AGENTS.md"* ]]         || { echo "AGENTS.md ref not rewritten: $content"; result=1; }
+  [[ "$content" != *".claude/"* ]]           || { echo ".claude/ still present: $content"; result=1; }
+  [[ "$content" != *"CLAUDE.md"* ]]          || { echo "CLAUDE.md still present: $content"; result=1; }
   rm -rf "$src" "$dst"
   return $result
 }
@@ -30,6 +34,21 @@ test_oc_translate_references_copies_md_files() {
   local result=0
   [[ -f "$dst/.opencode/references/one.md" ]] || { echo "one.md missing"; result=1; }
   [[ -f "$dst/.opencode/references/two.md" ]] || { echo "two.md missing"; result=1; }
+  rm -rf "$src" "$dst"
+  return $result
+}
+
+test_oc_translate_references_rewrites_paths() {
+  local src; src="$(mktemp -d)"
+  local dst; dst="$(mktemp -d)"
+  mkdir -p "$src/references"
+  printf 'See .claude/agents/ and CLAUDE.md for details.\n' > "$src/references/guide.md"
+  adapter_translate_references "$src/references" "$dst"
+  local content; content="$(cat "$dst/.opencode/references/guide.md")"
+  local result=0
+  [[ "$content" == *".opencode/agents/"* ]] || { echo ".opencode/agents/ not found: $content"; result=1; }
+  [[ "$content" == *"AGENTS.md"* ]]          || { echo "AGENTS.md not found: $content"; result=1; }
+  [[ "$content" != *".claude/"* ]]            || { echo ".claude/ still present: $content"; result=1; }
   rm -rf "$src" "$dst"
   return $result
 }
@@ -56,6 +75,27 @@ SKILLEOF
   local result=0
   [[ -f "$dst/.opencode/skills/foo/SKILL.md" ]] || { echo "foo missing"; result=1; }
   [[ -f "$dst/.opencode/skills/bar/SKILL.md" ]] || { echo "bar missing"; result=1; }
+  rm -rf "$src" "$dst"
+  return $result
+}
+
+test_oc_translate_skills_rewrites_paths() {
+  local src; src="$(mktemp -d)"
+  local dst; dst="$(mktemp -d)"
+  mkdir -p "$src/skills/create-agent"
+  cat > "$src/skills/create-agent/SKILL.md" <<'SKILLEOF'
+---
+name: create-agent
+description: Create a new agent
+---
+Save to .claude/agents/ and update CLAUDE.md.
+SKILLEOF
+  adapter_translate_skills "$src/skills" "$dst"
+  local content; content="$(cat "$dst/.opencode/skills/create-agent/SKILL.md")"
+  local result=0
+  [[ "$content" == *".opencode/agents/"* ]] || { echo ".opencode/agents/ not found: $content"; result=1; }
+  [[ "$content" == *"AGENTS.md"* ]]          || { echo "AGENTS.md not found: $content"; result=1; }
+  [[ "$content" != *".claude/"* ]]            || { echo ".claude/ still present: $content"; result=1; }
   rm -rf "$src" "$dst"
   return $result
 }
@@ -97,7 +137,7 @@ EOF
   local out="$dst/.opencode/agents/scribe.md"
   local result=0
   [[ -f "$out" ]] || { echo "agent file missing"; result=1; }
-  grep -q '^description: "Test scribe"' "$out" || { echo "description missing or wrong quoting"; cat "$out"; result=1; }
+  grep -q '^description: Test scribe' "$out" || { echo "description missing or wrong format"; cat "$out"; result=1; }
   grep -q '^mode: subagent' "$out" || { echo "mode missing"; result=1; }
   grep -q '^model: anthropic/claude-sonnet-4-5' "$out" || { echo "model not mapped"; result=1; }
   grep -q '^permission:' "$out" || { echo "permission block missing"; result=1; }
@@ -105,6 +145,31 @@ EOF
   grep -q '^You are the Scribe' "$out" || { echo "body missing"; result=1; }
   grep -q '^name:' "$out" && { echo "name: should be dropped"; result=1; }
   grep -q '^capabilities:' "$out" && { echo "capabilities: should be dropped"; result=1; }
+  rm -rf "$src" "$dst"
+  return $result
+}
+
+test_oc_translate_agents_rewrites_body_paths() {
+  local src; src="$(mktemp -d)"
+  local dst; dst="$(mktemp -d)"
+  mkdir -p "$src/agents"
+  cat > "$src/agents/scribe.md" <<'EOF'
+---
+name: scribe
+description: Test scribe
+model: sonnet
+capabilities: [read, write]
+---
+
+See .claude/references/agents.md and CLAUDE.md for context.
+EOF
+  adapter_translate_agents "$src/agents" "$dst"
+  local out="$dst/.opencode/agents/scribe.md"
+  local result=0
+  local content; content="$(cat "$out")"
+  [[ "$content" == *".opencode/references/agents.md"* ]] || { echo ".opencode/references/ not found: $content"; result=1; }
+  [[ "$content" == *"AGENTS.md"* ]]                       || { echo "AGENTS.md not found: $content"; result=1; }
+  [[ "$content" != *".claude/"* ]]                        || { echo ".claude/ still present: $content"; result=1; }
   rm -rf "$src" "$dst"
   return $result
 }

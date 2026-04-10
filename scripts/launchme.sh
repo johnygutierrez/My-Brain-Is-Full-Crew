@@ -63,13 +63,17 @@ fi
 
 # ── Check for existing installation ──────────────────────────────────────────
 EXISTING=0
-[[ -d "$VAULT_DIR/.claude" ]] && EXISTING=1
-[[ -f "$VAULT_DIR/CLAUDE.md" ]] && EXISTING=1
+[[ -d "$VAULT_DIR/.claude" ]]    && EXISTING=1
+[[ -f "$VAULT_DIR/CLAUDE.md" ]]  && EXISTING=1
+[[ -d "$VAULT_DIR/.opencode" ]]  && EXISTING=1
+[[ -f "$VAULT_DIR/AGENTS.md" ]]  && EXISTING=1
 
 if [[ $EXISTING -eq 1 ]]; then
   warn "An existing installation was detected:"
-  [[ -d "$VAULT_DIR/.claude" ]] && warn "  .claude/ directory exists"
+  [[ -d "$VAULT_DIR/.claude" ]]   && warn "  .claude/ directory exists"
   [[ -f "$VAULT_DIR/CLAUDE.md" ]] && warn "  CLAUDE.md exists"
+  [[ -d "$VAULT_DIR/.opencode" ]] && warn "  .opencode/ directory exists"
+  [[ -f "$VAULT_DIR/AGENTS.md" ]] && warn "  AGENTS.md exists"
   echo ""
   echo -e "   ${BOLD}The installer will overwrite core files. Custom agents are never deleted.${NC}"
   echo -e "   ${DIM}Your vault notes are never touched.${NC}"
@@ -114,6 +118,7 @@ case "$FRAMEWORK" in
     die "Unknown framework: $FRAMEWORK (install layout not defined)"
     ;;
 esac
+FRAMEWORK_VAULT_DIR="$VAULT_COMPONENTS_DIR"
 
 # ── Migrate legacy manifests (if any) ────────────────────────────────────────
 manifest_migrate
@@ -207,25 +212,36 @@ echo ""
 echo -e "${GREEN}${BOLD}   Setup complete!${NC}"
 echo ""
 echo -e "   ${VAULT_DIR}/"
-echo -e "   ├── .claude/"
+FW_DIR_NAME="$(basename "$VAULT_COMPONENTS_DIR")"
+DISPATCHER_NAME="$(basename "$DISPATCHER_DST")"
+echo -e "   ├── .${FW_DIR_NAME}/"
 echo -e "   │   ├── agents/          ${DIM}← agents${NC}"
 echo -e "   │   ├── skills/          ${DIM}← skills${NC}"
 echo -e "   │   ├── hooks/           ${DIM}← hooks${NC}"
-echo -e "   │   ├── settings.json    ${DIM}← hooks configuration${NC}"
+if [[ $HAS_PLUGINS -eq 1 ]]; then
+  echo -e "   │   ├── plugins/         ${DIM}← hook plugins${NC}"
+else
+  echo -e "   │   ├── settings.json    ${DIM}← hooks configuration${NC}"
+fi
 echo -e "   │   └── references/      ${DIM}← shared docs${NC}"
 echo -e "   ├── Meta/"
 echo -e "   │   └── scripts/         ${DIM}← ${ORCH_COUNT:-0} orchestra scripts${NC}"
-echo -e "   ├── CLAUDE.md            ${DIM}← project instructions${NC}"
+echo -e "   └── ${DISPATCHER_NAME}            ${DIM}← project instructions${NC}"
 if [[ "$MCP_ANSWER" =~ ^[Yy]$ ]]; then
   echo -e "   └── .mcp.json            ${DIM}← Gmail + Calendar${NC}"
 fi
+
 if [[ $DEP_COUNT -gt 0 ]]; then
   echo ""
-  warn "$DEP_COUNT file(s) were deprecated (moved to .claude/deprecated/)"
+  warn "$DEP_COUNT file(s) were deprecated (moved to .${FW_DIR_NAME}/deprecated/)"
 fi
 echo ""
 echo -e "   ${BOLD}Next steps:${NC}"
-echo -e "   1. Open Claude Code in your vault folder"
+if [[ "$FRAMEWORK" == "opencode" ]]; then
+  echo -e "   1. Open opencode in your vault folder"
+else
+  echo -e "   1. Open Claude Code in your vault folder"
+fi
 echo -e "   2. Say: ${BOLD}\"Initialize my vault\"${NC}"
 echo -e "   3. The Architect will guide you through setup"
 echo ""

@@ -8,6 +8,8 @@
 # =============================================================================
 
 OC_FRAMEWORK="opencode"
+OC_FW_DIR="opencode"
+OC_DISPATCHER="AGENTS.md"
 
 # Capability → opencode permission key. Returns the permission key to set to
 # "allow" for each capability, or empty string for capabilities that have no
@@ -68,16 +70,17 @@ oc_model_to_provider() {
 
 # adapter_translate_dispatcher <source_dispatcher_md> <dest_dir>
 # Copies the source DISPATCHER.md to dest_dir/AGENTS.md (opencode's vault-root
-# dispatcher filename). No content translation.
+# dispatcher filename). Rewrites .claude/ and CLAUDE.md references in the body.
 adapter_translate_dispatcher() {
   local src="$1" dst="$2"
   [[ -f "$src" ]] || return 0
   mkdir -p "$dst"
   cp "$src" "$dst/AGENTS.md"
+  rewrite_framework_paths "$dst/AGENTS.md" "$OC_FW_DIR" "$OC_DISPATCHER"
 }
 
 # adapter_translate_references <source_refs_dir> <dest_root>
-# Verbatim copy of *.md into dest_root/.opencode/references/.
+# Copies *.md into dest_root/.opencode/references/, rewriting framework paths.
 adapter_translate_references() {
   local src="$1" dst="$2"
   [[ -d "$src" ]] || return 0
@@ -87,11 +90,13 @@ adapter_translate_references() {
     [[ -f "$f" ]] || continue
     should_include "$f" "$OC_FRAMEWORK" || continue
     cp "$f" "$out/"
+    rewrite_framework_paths "$out/$(basename "$f")" "$OC_FW_DIR" "$OC_DISPATCHER"
   done
 }
 
 # adapter_translate_skills <source_skills_dir> <dest_root>
-# Copies each skill directory's SKILL.md into dest_root/.opencode/skills/<name>/.
+# Copies each skill directory's SKILL.md into dest_root/.opencode/skills/<name>/,
+# rewriting framework paths in the body.
 adapter_translate_skills() {
   local src="$1" dst="$2"
   [[ -d "$src" ]] || return 0
@@ -102,38 +107,8 @@ adapter_translate_skills() {
     local out="$dst/.opencode/skills/$name"
     mkdir -p "$out"
     cp "${skill_dir}SKILL.md" "$out/SKILL.md"
+    rewrite_framework_paths "$out/SKILL.md" "$OC_FW_DIR" "$OC_DISPATCHER"
   done
-}
-
-# _oc_flatten_description <agent_file>
-# Reads the description field from the source agent, collapsing any YAML
-# folded continuation lines into a single line with whitespace normalised.
-# Echoes the bare description text with no leading/trailing quotes.
-_oc_flatten_description() {
-  local file="$1"
-  awk '
-    /^---$/ { fm++; next }
-    fm == 1 && /^description:/ {
-      sub(/^description:[[:space:]]*/, "")
-      desc = $0
-      in_desc = 1
-      next
-    }
-    fm == 1 && in_desc && /^[[:space:]]/ {
-      sub(/^[[:space:]]+/, "")
-      desc = desc " " $0
-      next
-    }
-    fm == 1 && in_desc { in_desc = 0 }
-    fm >= 2 { exit }
-    END {
-      # Collapse runs of whitespace
-      gsub(/[[:space:]]+/, " ", desc)
-      sub(/^[[:space:]]+/, "", desc)
-      sub(/[[:space:]]+$/, "", desc)
-      print desc
-    }
-  ' "$file"
 }
 
 # adapter_translate_agents <source_agents_dir> <dest_root>
@@ -153,7 +128,6 @@ adapter_translate_agents() {
     local model_raw; model_raw="$(parse_frontmatter "$agent" model)"
     local mode_raw; mode_raw="$(parse_frontmatter "$agent" mode)"
     local caps; caps="$(parse_capabilities "$agent")"
-    local desc; desc="$(_oc_flatten_description "$agent")"
 
     local model_out; model_out="$(oc_model_to_provider "$model_raw")"
     local mode_out="${mode_raw:-subagent}"
@@ -174,7 +148,8 @@ adapter_translate_agents() {
     local out_file="$out_dir/$(basename "$agent")"
     {
       echo "---"
-      echo "description: \"$desc\""
+      # Copy description block verbatim (may be folded YAML with continuation lines)
+      awk '/^---$/{n++; next} n==1 && /^description:/{print; in_desc=1; next} n==1 && in_desc && /^[[:space:]]/{print; next} n==1 && in_desc && !/^[[:space:]]/{in_desc=0} n>=2{exit}' "$agent"
       echo "mode: $mode_out"
       echo "model: $model_out"
       if [[ -z "$perms" ]]; then
@@ -189,6 +164,7 @@ adapter_translate_agents() {
       echo ""
       agent_body "$agent"
     } > "$out_file"
+    rewrite_framework_paths "$out_file" "$OC_FW_DIR" "$OC_DISPATCHER"
   done < <(enumerate_agents "$src")
 }
 
@@ -252,6 +228,7 @@ adapter_translate_hooks() {
     [[ -f "$src/$script" ]] || continue
     cp "$src/$script" "$hooks_out/$script"
     chmod +x "$hooks_out/$script"
+    rewrite_framework_paths "$hooks_out/$script" "$OC_FW_DIR" "$OC_DISPATCHER"
     have_any=1
   done < <(enumerate_hooks "$src")
 

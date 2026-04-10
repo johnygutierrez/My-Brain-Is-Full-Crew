@@ -17,7 +17,7 @@ description: >
   JA: "新しいプロジェクト".
   Also trigger when a new topic/project/area emerges that needs a home, or when
   another agent reports a missing structure.
-tools: Read, Write, Edit, Bash, Glob, Grep
+tools: Read, Glob, Grep, Write, Edit, Bash
 model: opus
 ---
 

@@ -15,10 +15,24 @@ CAPABILITY_VOCAB="read write edit bash webfetch websearch notebook task todo"
 # The closed set of hook event names the source .hook.yaml may declare.
 EVENT_VOCAB="before-tool-use after-tool-use on-notification on-session-start on-prompt-submit"
 
+# ── Path rewriting ───────────────────────────────────────────────────────────
+
+# rewrite_framework_paths <file> <target_fw_dir> <target_dispatcher>
+# Rewrites source-canonical framework path references in a text file in-place.
+# Source files use .claude/ and CLAUDE.md as the canonical form.
+# Call this after copying any text file from source to dist for non-CC frameworks.
+# No-op when target_fw_dir is "claude" (i.e. building for claude-code, whose
+# canonical output paths already match the source form — no rewrite needed).
+rewrite_framework_paths() {
+  local file="$1" tgt_dir="$2" tgt_dispatcher="$3"
+  [[ "$tgt_dir" == "claude" && "$tgt_dispatcher" == "CLAUDE.md" ]] && return 0
+  sed -i \
+    -e "s|\.claude/|.${tgt_dir}/|g" \
+    -e "s|CLAUDE\.md|${tgt_dispatcher}|g" \
+    "$file"
+}
+
 # ── Parsing helpers ──────────────────────────────────────────────────────────
-# Defined in subsequent tasks: parse_frontmatter, parse_capabilities,
-# parse_hook_yaml, agent_body, should_include, enumerate_agents,
-# enumerate_hooks, json_object.
 
 # parse_frontmatter <file> <key>
 # Echoes the value of a top-level YAML key from the file's --- ... --- block.

@@ -46,8 +46,12 @@ esac
   || die "No agents/ found in $VAULT_DIR for framework '$FRAMEWORK' — run launchme.sh first"
 
 # ── Confirm ───────────────────────────────────────────────────────────────────
-echo -e "${BOLD}This will update core agents, skills, references, hooks, and CLAUDE.md.${NC}"
-echo -e "   ${DIM}Custom agents in .claude/agents/ are never overwritten or deleted.${NC}"
+case "$FRAMEWORK" in
+  opencode) _DISP_NAME="AGENTS.md"; _FW_DIR_NAME="opencode" ;;
+  *)        _DISP_NAME="CLAUDE.md"; _FW_DIR_NAME="claude" ;;
+esac
+echo -e "${BOLD}This will update core agents, skills, references, hooks, and ${_DISP_NAME}.${NC}"
+echo -e "   ${DIM}Custom agents in .${_FW_DIR_NAME}/agents/ are never overwritten or deleted.${NC}"
 echo -e "   ${DIM}Custom content between MBIFC markers in references is preserved.${NC}"
 echo -e "   ${DIM}Your vault notes are never touched.${NC}"
 echo ""
@@ -89,6 +93,7 @@ case "$FRAMEWORK" in
     die "Unknown framework: $FRAMEWORK (install layout not defined)"
     ;;
 esac
+FRAMEWORK_VAULT_DIR="$VAULT_COMPONENTS_DIR"
 
 # ── Migrate legacy manifests (if any) ────────────────────────────────────────
 manifest_migrate

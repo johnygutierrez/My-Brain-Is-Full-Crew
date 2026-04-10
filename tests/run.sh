@@ -12,7 +12,7 @@ PASS=0
 FAIL=0
 FAILED_TESTS=()
 
-for test_file in $(find "$SCRIPT_DIR" -name '*.test.sh' | sort); do
+while IFS= read -r test_file; do
   echo "── $(basename "$test_file") ──────────────────────"
   # Source the test file to get its functions
   source "$test_file"
@@ -28,7 +28,7 @@ for test_file in $(find "$SCRIPT_DIR" -name '*.test.sh' | sort); do
     fi
     unset -f "$fn"
   done
-done
+done < <(find "$SCRIPT_DIR" -name '*.test.sh' | sort)
 
 echo ""
 echo "==========================="
