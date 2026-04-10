@@ -78,10 +78,11 @@ module.exports = async function mbifcHooksPlugin({ app, client }) {
         const scriptAbs = path.isAbsolute(h.script)
           ? h.script
           : path.join(__dirname, h.script);
-        const { exitCode, stderr } = await runBashHook(scriptAbs, payload);
+        const { exitCode, stdout, stderr } = await runBashHook(scriptAbs, payload);
         if (exitCode === 2) {
           // Documented opencode block mechanism for tool.execute.before
-          throw new Error(`[${h.name}] blocked: ${stderr.trim() || "exit 2"}`);
+          const reason = stdout.trim() || stderr.trim() || "exit 2";
+          throw new Error(`[${h.name}] blocked: ${reason}`);
         }
       }
     };

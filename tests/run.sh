@@ -15,7 +15,12 @@ FAILED_TESTS=()
 while IFS= read -r test_file; do
   echo "── $(basename "$test_file") ──────────────────────"
   # Source the test file to get its functions
-  source "$test_file"
+  if ! source "$test_file"; then
+    echo "  ✗ FAILED TO SOURCE: $test_file"
+    FAIL=$((FAIL + 1))
+    FAILED_TESTS+=("SOURCE:$(basename "$test_file")")
+    continue
+  fi
   # Run every function starting with test_
   for fn in $(declare -F | awk '{print $3}' | grep '^test_'); do
     if (set -e; "$fn") 2>&1 | sed 's/^/    /'; then
