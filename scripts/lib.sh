@@ -161,13 +161,13 @@ merge_marked_file() {
 # Single unified manifest at $VAULT_DIR/.{framework}/.mbifc-manifest
 # Format: INI-style with [section] headers, one entry per line.
 #
-# FRAMEWORK_VAULT_DIR must be set before calling these functions (e.g.
+# PLATFORM_VAULT_DIR must be set before calling these functions (e.g.
 # $VAULT_DIR/.claude for claude-code, $VAULT_DIR/.opencode for opencode).
 # Defaults to $VAULT_DIR/.claude for backwards compatibility.
 
 manifest_read() {
   local section="$1"
-  local file="${FRAMEWORK_VAULT_DIR:-$VAULT_DIR/.claude}/.mbifc-manifest"
+  local file="${PLATFORM_VAULT_DIR:-$VAULT_DIR/.claude}/.mbifc-manifest"
   [[ -f "$file" ]] || return 0
   awk -v sec="[$section]" '
     $0 == sec         { found=1; next }
@@ -179,7 +179,7 @@ manifest_read() {
 manifest_write() {
   local section="$1"; shift
   local entries=("$@")
-  local file="${FRAMEWORK_VAULT_DIR:-$VAULT_DIR/.claude}/.mbifc-manifest"
+  local file="${PLATFORM_VAULT_DIR:-$VAULT_DIR/.claude}/.mbifc-manifest"
   mkdir -p "$(dirname "$file")"
   local tmpfile; tmpfile="$(mktemp)"
   local in_section=0 section_written=0
@@ -215,7 +215,7 @@ manifest_write() {
 
 manifest_remove() {
   local section="$1" name="$2"
-  local file="${FRAMEWORK_VAULT_DIR:-$VAULT_DIR/.claude}/.mbifc-manifest"
+  local file="${PLATFORM_VAULT_DIR:-$VAULT_DIR/.claude}/.mbifc-manifest"
   [[ -f "$file" ]] || return 0
   local tmpfile; tmpfile="$(mktemp)"
   local in_section=0
@@ -231,7 +231,7 @@ manifest_remove() {
 # Converts legacy per-directory .core-manifest files to the unified format.
 # Runs only when legacy files are present; idempotent thereafter.
 manifest_migrate() {
-  local _fw_dir="${FRAMEWORK_VAULT_DIR:-$VAULT_DIR/.claude}"
+  local _fw_dir="${PLATFORM_VAULT_DIR:-$VAULT_DIR/.claude}"
   local agents_mf="$_fw_dir/agents/.core-manifest"
   local refs_mf="$_fw_dir/references/.core-manifest"
   [[ -f "$agents_mf" ]] || [[ -f "$refs_mf" ]] || return 0
@@ -259,7 +259,7 @@ manifest_migrate() {
 
 # deprecate_removed <section> <src_dir> <dst_dir>
 # Moves files listed in the manifest for <section> that no longer exist in
-# <src_dir> to $FRAMEWORK_VAULT_DIR/deprecated/, prepending a DEPRECATED header.
+# <src_dir> to $PLATFORM_VAULT_DIR/deprecated/, prepending a DEPRECATED header.
 # Prints the count of deprecated files to stdout.
 deprecate_removed() {
   local section="$1" src_dir="$2" dst_dir="$3"
@@ -273,7 +273,7 @@ deprecate_removed() {
     [[ "$name" == *"-DEPRECATED"* ]] && continue  # already deprecated
 
     local dep_name="${name%.md}-DEPRECATED.md"
-    local dep_dir="${FRAMEWORK_VAULT_DIR:-$VAULT_DIR/.claude}/deprecated"
+    local dep_dir="${PLATFORM_VAULT_DIR:-$VAULT_DIR/.claude}/deprecated"
     mkdir -p "$dep_dir"
     [[ -f "$dep_dir/$dep_name" ]] && continue     # already done in a prior run
 
@@ -284,7 +284,7 @@ deprecate_removed() {
     mv "$dep_dir/$dep_name.tmp" "$dep_dir/$dep_name"
 
     manifest_remove "$section" "$name"
-    warn "Deprecated: $name → $(basename "${FRAMEWORK_VAULT_DIR:-$VAULT_DIR/.claude}")/deprecated/$dep_name"
+    warn "Deprecated: $name → $(basename "${PLATFORM_VAULT_DIR:-$VAULT_DIR/.claude}")/deprecated/$dep_name"
     count=$((count + 1))
   done < <(manifest_read "$section")
 

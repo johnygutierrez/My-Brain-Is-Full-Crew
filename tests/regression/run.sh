@@ -10,7 +10,7 @@ SNAPSHOT_DIR="$SCRIPT_DIR/snapshot"
 [[ -d "$SNAPSHOT_DIR" ]] || { echo "no snapshot at $SNAPSHOT_DIR — run take-snapshot.sh before refactoring"; exit 1; }
 
 # Build claude-code
-bash "$REPO_DIR/scripts/build.sh" --framework claude-code
+bash "$REPO_DIR/scripts/build.sh" --platform claude-code
 
 DIST_DIR="$REPO_DIR/dist/claude-code"
 [[ -d "$DIST_DIR" ]] || { echo "build did not produce $DIST_DIR"; exit 1; }

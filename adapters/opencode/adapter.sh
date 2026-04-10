@@ -7,7 +7,7 @@
 # opencode expects in the user's vault.
 # =============================================================================
 
-OC_FRAMEWORK="opencode"
+OC_PLATFORM="opencode"
 OC_FW_DIR="opencode"
 OC_DISPATCHER="AGENTS.md"
 
@@ -88,7 +88,7 @@ adapter_translate_references() {
   mkdir -p "$out"
   for f in "$src"/*.md; do
     [[ -f "$f" ]] || continue
-    should_include "$f" "$OC_FRAMEWORK" || continue
+    should_include "$f" "$OC_PLATFORM" || continue
     cp "$f" "$out/"
     rewrite_framework_paths "$out/$(basename "$f")" "$OC_FW_DIR" "$OC_DISPATCHER"
   done
@@ -102,7 +102,7 @@ adapter_translate_skills() {
   [[ -d "$src" ]] || return 0
   for skill_dir in "$src"/*/; do
     [[ -f "${skill_dir}SKILL.md" ]] || continue
-    should_include "${skill_dir}SKILL.md" "$OC_FRAMEWORK" || continue
+    should_include "${skill_dir}SKILL.md" "$OC_PLATFORM" || continue
     local name; name="$(basename "$skill_dir")"
     local out="$dst/.opencode/skills/$name"
     mkdir -p "$out"
@@ -123,7 +123,7 @@ adapter_translate_agents() {
 
   while IFS= read -r agent; do
     [[ -f "$agent" ]] || continue
-    should_include "$agent" "$OC_FRAMEWORK" || continue
+    should_include "$agent" "$OC_PLATFORM" || continue
 
     local model_raw; model_raw="$(parse_frontmatter "$agent" model)"
     local mode_raw; mode_raw="$(parse_frontmatter "$agent" mode)"
@@ -178,7 +178,7 @@ _oc_hook_registry_json() {
   local entries='[]'
   while IFS= read -r yaml; do
     [[ -f "$yaml" ]] || continue
-    should_include "$yaml" "$OC_FRAMEWORK" || continue
+    should_include "$yaml" "$OC_PLATFORM" || continue
     local meta; meta="$(parse_hook_yaml "$yaml")"
     local name; name="$(echo "$meta" | grep '^name=' | head -1 | cut -d= -f2-)"
     local script; script="$(echo "$meta" | grep '^script=' | head -1 | cut -d= -f2-)"
@@ -222,7 +222,7 @@ adapter_translate_hooks() {
   local have_any=0
   while IFS= read -r yaml; do
     [[ -f "$yaml" ]] || continue
-    should_include "$yaml" "$OC_FRAMEWORK" || continue
+    should_include "$yaml" "$OC_PLATFORM" || continue
     local meta; meta="$(parse_hook_yaml "$yaml")"
     local script; script="$(echo "$meta" | grep '^script=' | head -1 | cut -d= -f2-)"
     [[ -f "$src/$script" ]] || continue

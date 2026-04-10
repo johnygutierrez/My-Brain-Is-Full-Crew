@@ -7,7 +7,7 @@
 # Claude Code expects in the user's vault.
 # =============================================================================
 
-CC_FRAMEWORK="claude-code"
+CC_PLATFORM="claude-code"
 
 # Capability → CC tools mapping. Each capability expands into one or more
 # Claude Code tool names. The expansion is order-preserving.
@@ -146,7 +146,7 @@ adapter_translate_hooks() {
 
   while IFS= read -r yaml; do
     [[ -z "$yaml" ]] && continue
-    should_include "$yaml" "$CC_FRAMEWORK" || continue
+    should_include "$yaml" "$CC_PLATFORM" || continue
     local meta; meta="$(parse_hook_yaml "$yaml")"
     local name; name="$(echo "$meta" | grep '^name=' | head -1 | cut -d= -f2- || true)"
     local script; script="$(echo "$meta" | grep '^script=' | head -1 | cut -d= -f2- || true)"
@@ -205,7 +205,7 @@ adapter_translate_agents() {
 
   while IFS= read -r agent; do
     [[ -z "$agent" ]] && continue
-    should_include "$agent" "$CC_FRAMEWORK" || continue
+    should_include "$agent" "$CC_PLATFORM" || continue
     local name; name="$(parse_frontmatter "$agent" name)"
     local model; model="$(parse_frontmatter "$agent" model)"
     local caps; caps="$(parse_capabilities "$agent")"
@@ -250,7 +250,7 @@ adapter_translate_skills() {
   [[ -d "$src" ]] || return 0
   for skill_dir in "$src"/*/; do
     [[ -f "${skill_dir}SKILL.md" ]] || continue
-    should_include "${skill_dir}SKILL.md" "$CC_FRAMEWORK" || continue
+    should_include "${skill_dir}SKILL.md" "$CC_PLATFORM" || continue
     local name; name="$(basename "$skill_dir")"
     local out="$dst/.claude/skills/$name"
     mkdir -p "$out"
@@ -267,7 +267,7 @@ adapter_translate_references() {
   mkdir -p "$out"
   for f in "$src"/*.md; do
     [[ -f "$f" ]] || continue
-    should_include "$f" "$CC_FRAMEWORK" || continue
+    should_include "$f" "$CC_PLATFORM" || continue
     cp "$f" "$out/"
   done
 }

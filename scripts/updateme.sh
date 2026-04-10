@@ -9,7 +9,7 @@
 #   bash scripts/updateme.sh
 #
 # Options:
-#   --framework <name>   Framework to build for (default: claude-code)
+#   --platform <name>    Platform to build for (default: claude-code)
 #   --target <path>      Override the vault destination path
 # =============================================================================
 
@@ -22,11 +22,11 @@ source "$SCRIPT_DIR/lib.sh"
 resolve_paths "${BASH_SOURCE[0]}"
 
 # ── Parse args ─────────────────────────────────────────────────────────────
-FRAMEWORK="claude-code"
+PLATFORM="claude-code"
 TARGET_OVERRIDE=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --framework) FRAMEWORK="$2"; shift 2 ;;
+    --platform) PLATFORM="$2"; shift 2 ;;
     --target)    TARGET_OVERRIDE="$2"; shift 2 ;;
     *) die "Unknown argument: $1" ;;
   esac
@@ -37,16 +37,16 @@ done
 print_banner "Update       "
 
 # ── Check vault has been set up ───────────────────────────────────────────────
-case "$FRAMEWORK" in
+case "$PLATFORM" in
   claude-code) _SETUP_CHECK="$VAULT_DIR/.claude/agents" ;;
   opencode)    _SETUP_CHECK="$VAULT_DIR/.opencode/agents" ;;
   *)           _SETUP_CHECK="$VAULT_DIR/.claude/agents" ;;
 esac
 [[ -d "$_SETUP_CHECK" ]] \
-  || die "No agents/ found in $VAULT_DIR for framework '$FRAMEWORK' — run launchme.sh first"
+  || die "No agents/ found in $VAULT_DIR for platform '$PLATFORM' — run launchme.sh first"
 
 # ── Confirm ───────────────────────────────────────────────────────────────────
-case "$FRAMEWORK" in
+case "$PLATFORM" in
   opencode) _DISP_NAME="AGENTS.md"; _FW_DIR_NAME="opencode" ;;
   *)        _DISP_NAME="CLAUDE.md"; _FW_DIR_NAME="claude" ;;
 esac
@@ -63,14 +63,14 @@ if [[ ! "$ANSWER" =~ ^[Cc]$ ]]; then
 fi
 echo ""
 
-# ── Build the framework dist ───────────────────────────────────────────────
-info "Building $FRAMEWORK adapter..."
-bash "$SCRIPT_DIR/build.sh" --framework "$FRAMEWORK"
-DIST_DIR="$REPO_DIR/dist/$FRAMEWORK"
+# ── Build the platform dist ───────────────────────────────────────────────
+info "Building $PLATFORM adapter..."
+bash "$SCRIPT_DIR/build.sh" --platform "$PLATFORM"
+DIST_DIR="$REPO_DIR/dist/$PLATFORM"
 [[ -d "$DIST_DIR" ]] || die "Build did not produce $DIST_DIR"
 
-# ── Framework-specific install layout ────────────────────────────────────────
-case "$FRAMEWORK" in
+# ── Platform-specific install layout ────────────────────────────────────────
+case "$PLATFORM" in
   claude-code)
     DIST_COMPONENTS_DIR="$DIST_DIR/.claude"
     VAULT_COMPONENTS_DIR="$VAULT_DIR/.claude"
@@ -90,10 +90,10 @@ case "$FRAMEWORK" in
     HAS_PLUGINS=1
     ;;
   *)
-    die "Unknown framework: $FRAMEWORK (install layout not defined)"
+    die "Unknown platform: $PLATFORM (install layout not defined)"
     ;;
 esac
-FRAMEWORK_VAULT_DIR="$VAULT_COMPONENTS_DIR"
+PLATFORM_VAULT_DIR="$VAULT_COMPONENTS_DIR"
 
 # ── Migrate legacy manifests (if any) ────────────────────────────────────────
 manifest_migrate
@@ -146,5 +146,5 @@ else
   [[ $DEP_COUNT -gt 0 ]] && warn "$DEP_COUNT file(s) deprecated (moved to deprecated/)"
 fi
 echo ""
-echo -e "   ${DIM}Restart $FRAMEWORK to pick up the changes.${NC}"
+echo -e "   ${DIM}Restart $PLATFORM to pick up the changes.${NC}"
 echo ""
