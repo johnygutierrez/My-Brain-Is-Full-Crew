@@ -123,18 +123,21 @@ When you run the installer, the 8 core crew agents are automatically translated 
 
 ### What the TOML format looks like
 
+Codex CLI agent files use top-level keys (not nested under `[agent]`). The required fields are `name`, `description`, and `developer_instructions`:
+
 ```toml
-[agent]
 name = "budget-tracker"
 description = "Monitors spending notes and flags when you are close to the monthly limit"
 model = "o4-mini"
-
-[agent.prompt]
-content = """
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+developer_instructions = '''
 You are the Budget Tracker agent for the My Brain Is Full — Crew system.
 ... (your agent instructions here)
-"""
+'''
 ```
+
+See the [Codex CLI agent roles documentation](https://developers.openai.com/codex/subagents) for the full schema.
 
 ---
 

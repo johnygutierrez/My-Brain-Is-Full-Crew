@@ -471,12 +471,15 @@ My-Brain-Is-Full-Crew/               ← cloned inside your vault
 ├── docs/                            User-facing documentation
 │   ├── getting-started.md             Step-by-step setup guide
 │   ├── examples.md                    Real-world usage examples
+│   ├── codex-cli.md                   Codex CLI platform guide
+│   ├── codex-migration.md             Migrating to Codex CLI from other platforms
 │   └── agents/                        Deep-dive into each agent
 ├── adapters/                        Platform adapters (build system)
 │   ├── lib.sh                         Shared parsing and rewrite helpers
 │   ├── claude-code/                   Claude Code adapter
 │   ├── gemini-cli/                    Gemini CLI adapter
-│   └── opencode/                      OpenCode adapter
+│   ├── opencode/                      OpenCode adapter
+│   └── codex-cli/                     Codex CLI adapter
 ├── mcp/servers.yaml                 MCP server definitions (source of truth)
 ├── LICENSE
 ├── README.md                        You are here

@@ -198,7 +198,7 @@ test_cc_translate_skills_real_corpus_has_exact_skill_directories() {
     weekly-agenda
   )
 
-  mapfile -t actual < <(find "$dst/.agents/skills" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
+  mapfile -t actual < <(find "$dst/.agents/skills" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)
   [[ "${#actual[@]}" -eq 14 ]] \
     || { echo "expected 14 generated skill directories, found ${#actual[@]}: ${actual[*]}"; result=1; }
 
@@ -229,7 +229,6 @@ test_cc_translate_skills_rewrites_high_risk_real_skills_for_codex() {
     [[ -f "$file" ]] || { echo "missing generated high-risk skill: $file"; result=1; continue; }
     content="$(cat "$file")"
     [[ "$content" != *'AskUserQuestion'* ]] || { echo "AskUserQuestion leaked into $(basename "$(dirname "$file")")"; result=1; }
-    [[ "$content" != *'request_user_input'* ]] || { echo "request_user_input leaked into $(basename "$(dirname "$file")")"; result=1; }
     [[ "$content" != *'.platform/'* ]] || { echo ".platform/ leaked into $(basename "$(dirname "$file")")"; result=1; }
   done
 
@@ -470,12 +469,12 @@ EOF
   local result=0
   [[ "$content" == *'sandbox_workspace_write.network_access = false'* ]] || { echo "network_access default missing"; result=1; }
   [[ "$content" == *'[profiles.quality]'* ]] || { echo "profiles.quality missing"; result=1; }
-  [[ "$content" == *'model = "gpt-5.4"'* ]] || { echo "quality model missing"; result=1; }
+  [[ "$content" == *'model = "o3"'* ]] || { echo "quality model missing"; result=1; }
   [[ "$content" == *'model_reasoning_effort = "high"'* ]] || { echo "quality reasoning effort missing"; result=1; }
   [[ "$content" == *'[profiles.balanced]'* ]] || { echo "profiles.balanced missing"; result=1; }
-  [[ "$content" == *'model = "gpt-5.4-mini"'* ]] || { echo "balanced model missing"; result=1; }
+  [[ "$content" == *'model = "o4-mini"'* ]] || { echo "balanced model missing"; result=1; }
   [[ "$content" == *'[profiles.budget]'* ]] || { echo "profiles.budget missing"; result=1; }
-  [[ "$content" == *'model = "gpt-5.3-codex-spark"'* ]] || { echo "budget model missing"; result=1; }
+  [[ "$content" == *'model = "o4-mini"'* ]] || { echo "budget model missing"; result=1; }
   rm -rf "$src" "$dst"
   return $result
 }
@@ -1015,7 +1014,7 @@ test_cc_adapter_build_real_agent_corpus_has_exact_toml_files() {
     transcriber.toml
   )
 
-  mapfile -t actual < <(find "$dst/.codex/agents" -maxdepth 1 -name '*.toml' -printf '%f\n' | sort)
+  mapfile -t actual < <(find "$dst/.codex/agents" -maxdepth 1 -name '*.toml' -exec basename {} \; | sort)
   [[ "${#actual[@]}" -eq 8 ]] \
     || { echo "expected 8 generated agent TOML files, found ${#actual[@]}: ${actual[*]}"; result=1; }
 
@@ -1076,12 +1075,12 @@ test_cc_adapter_build_real_agent_corpus_has_required_fields_and_metadata() {
     || { echo 'postman.toml should be workspace-write'; result=1; }
   grep -q '^sandbox_mode = "workspace-write"$' "$dst/.codex/agents/architect.toml" \
     || { echo 'architect.toml should be workspace-write'; result=1; }
-  grep -q '^model = "gpt-5.4"$' "$dst/.codex/agents/architect.toml" \
-    || { echo 'architect.toml should map to gpt-5.4'; result=1; }
+  grep -q '^model = "o3"$' "$dst/.codex/agents/architect.toml" \
+    || { echo 'architect.toml should map to o3'; result=1; }
   grep -q '^model_reasoning_effort = "high"$' "$dst/.codex/agents/architect.toml" \
     || { echo 'architect.toml should map to high reasoning effort'; result=1; }
-  grep -q '^model = "gpt-5.4-mini"$' "$dst/.codex/agents/scribe.toml" \
-    || { echo 'scribe.toml should map to gpt-5.4-mini'; result=1; }
+  grep -q '^model = "o4-mini"$' "$dst/.codex/agents/scribe.toml" \
+    || { echo 'scribe.toml should map to o4-mini'; result=1; }
   grep -q '^model_reasoning_effort = "medium"$' "$dst/.codex/agents/scribe.toml" \
     || { echo 'scribe.toml should map to medium reasoning effort'; result=1; }
 
@@ -1094,7 +1093,8 @@ test_cc_adapter_build_real_agent_corpus_has_required_fields_and_metadata() {
 # ---------------------------------------------------------------------------
 
 test_cc_rewrite_tool_compat_removes_ask_user_question() {
-  # AskUserQuestion (backtick and bare) must be rewritten to "ask the user"
+  # AskUserQuestion (backtick and bare) must be rewritten to request_user_input
+  # (Codex CLI native tool)
   local tmp; tmp="$(mktemp)"
   cat > "$tmp" <<'EOF'
 You MUST use the `AskUserQuestion` tool for every question.
@@ -1103,24 +1103,23 @@ EOF
   rewrite_tool_compat "$tmp"
   local content; content="$(cat "$tmp")"
   local result=0
-  [[ "$content" != *'AskUserQuestion'* ]] || { echo "AskUserQuestion still present: $content"; result=1; }
-  [[ "$content" == *'ask the user'* ]]    || { echo "'ask the user' not found: $content"; result=1; }
+  [[ "$content" != *'AskUserQuestion'* ]]      || { echo "AskUserQuestion still present: $content"; result=1; }
+  [[ "$content" == *'request_user_input'* ]]   || { echo "'request_user_input' not found: $content"; result=1; }
   rm -f "$tmp"
   return $result
 }
 
-test_cc_rewrite_tool_compat_removes_request_user_input() {
-  # request_user_input (backtick and bare) must be rewritten to "ask the user"
+test_cc_rewrite_tool_compat_preserves_request_user_input() {
+  # request_user_input is a real Codex CLI tool — it must NOT be rewritten
   local tmp; tmp="$(mktemp)"
   cat > "$tmp" <<'EOF'
 Call `request_user_input` to get the answer.
-Also request_user_input should not appear.
+Also request_user_input should remain.
 EOF
   rewrite_tool_compat "$tmp"
   local content; content="$(cat "$tmp")"
   local result=0
-  [[ "$content" != *'request_user_input'* ]] || { echo "request_user_input still present: $content"; result=1; }
-  [[ "$content" == *'ask the user'* ]]        || { echo "'ask the user' not found: $content"; result=1; }
+  [[ "$content" == *'request_user_input'* ]] || { echo "request_user_input was removed but should be preserved: $content"; result=1; }
   rm -f "$tmp"
   return $result
 }
@@ -1189,8 +1188,8 @@ SKILLEOF
   return $result
 }
 
-test_cc_skill_output_contains_no_request_user_input() {
-  # Skills translated by adapter_translate_skills must not contain request_user_input
+test_cc_skill_output_preserves_request_user_input() {
+  # request_user_input is a real Codex CLI tool — it must be preserved in skill output
   local src; src="$(mktemp -d)"
   local dst; dst="$(mktemp -d)"
   mkdir -p "$src/skills/inbox"
@@ -1205,7 +1204,7 @@ SKILLEOF
   adapter_translate_skills "$src/skills" "$dst"
   local content; content="$(cat "$dst/.agents/skills/inbox/SKILL.md")"
   local result=0
-  [[ "$content" != *'request_user_input'* ]] || { echo "request_user_input still present in skill output: $content"; result=1; }
+  [[ "$content" == *'request_user_input'* ]] || { echo "request_user_input should be preserved in skill output: $content"; result=1; }
   rm -rf "$src" "$dst"
   return $result
 }
@@ -1280,7 +1279,8 @@ AGENTEOF
 
 test_cc_real_create_agent_skill_has_no_ask_user_question() {
   # The real skills/create-agent/SKILL.md (which has AskUserQuestion) must produce
-  # zero occurrences of AskUserQuestion in the Codex output
+  # zero occurrences of AskUserQuestion in the Codex output.
+  # request_user_input SHOULD be present (it is the Codex native equivalent).
   local dst; dst="$(mktemp -d)"
   adapter_translate_skills "$ROOT/skills" "$dst"
   local result=0
@@ -1289,8 +1289,8 @@ test_cc_real_create_agent_skill_has_no_ask_user_question() {
     local content; content="$(cat "$skill_out")"
     [[ "$content" != *'AskUserQuestion'* ]] \
       || { echo "AskUserQuestion still present in real create-agent skill output"; result=1; }
-    [[ "$content" != *'request_user_input'* ]] \
-      || { echo "request_user_input still present in real create-agent skill output"; result=1; }
+    [[ "$content" == *'request_user_input'* ]] \
+      || { echo "request_user_input should be present in real create-agent skill output (native Codex tool)"; result=1; }
   fi
   rm -rf "$dst"
   return $result
@@ -1343,8 +1343,9 @@ test_cc_agents_md_header_is_idempotent() {
   return $result
 }
 
-test_cc_agents_md_has_no_tool_names_after_full_build() {
-  # End-to-end: after adapter_build, AGENTS.md has no unsupported tool names
+test_cc_agents_md_has_no_unsupported_tool_names_after_full_build() {
+  # End-to-end: after adapter_build, AGENTS.md has no Claude-only tool names.
+  # request_user_input IS allowed (native Codex tool).
   local src; src="$(mktemp -d)"
   local dst; dst="$(mktemp -d)"
   mkdir -p "$src/mcp"
@@ -1367,9 +1368,10 @@ EOF
   local content; content="$(cat "$dst/AGENTS.md")"
   local result=0
   [[ "$content" != *'AskUserQuestion'* ]]    || { echo "AskUserQuestion in AGENTS.md after build"; result=1; }
-  [[ "$content" != *'request_user_input'* ]] || { echo "request_user_input in AGENTS.md after build"; result=1; }
   [[ "$content" != *'Skill tool'* ]]         || { echo "Skill tool in AGENTS.md after build"; result=1; }
   [[ "$content" != *'Agent tool'* ]]         || { echo "Agent tool in AGENTS.md after build"; result=1; }
+  # request_user_input SHOULD be present (it is the Codex equivalent of AskUserQuestion)
+  [[ "$content" == *'request_user_input'* ]] || { echo "request_user_input should be present in AGENTS.md after build"; result=1; }
   grep -qF '<!-- CODEX-ROUTING-HEADER -->' "$dst/AGENTS.md" \
     || { echo "CODEX-ROUTING-HEADER missing after full build"; result=1; }
   rm -rf "$src" "$dst"
@@ -1389,7 +1391,7 @@ test_cc_adapter_build_real_dispatcher_references_codex_compat_contract() {
   [[ "$content" != *'Skill tool'* ]] || { echo 'Skill tool leaked into real AGENTS.md output'; result=1; }
   [[ "$content" != *'Agent tool'* ]] || { echo 'Agent tool leaked into real AGENTS.md output'; result=1; }
   [[ "$content" != *'AskUserQuestion'* ]] || { echo 'AskUserQuestion leaked into real AGENTS.md output'; result=1; }
-  [[ "$content" != *'request_user_input'* ]] || { echo 'request_user_input leaked into real AGENTS.md output'; result=1; }
+  # request_user_input IS expected (native Codex tool, replaces AskUserQuestion)
 
   rm -rf "$dst"
   return $result
@@ -1447,7 +1449,8 @@ EOF
   [[ "$content" != *'Skill tool'* ]] || { echo 'Skill tool should be normalized'; result=1; }
   [[ "$content" != *'Agent tool'* ]] || { echo 'Agent tool should be normalized'; result=1; }
   [[ "$content" != *'AskUserQuestion'* ]] || { echo 'AskUserQuestion should be normalized'; result=1; }
-  [[ "$content" != *'request_user_input'* ]] || { echo 'request_user_input should be normalized'; result=1; }
+  # request_user_input SHOULD be present (native Codex tool, replaces AskUserQuestion)
+  [[ "$content" == *'request_user_input'* ]] || { echo 'request_user_input should be present after normalization'; result=1; }
   [[ "$content" != *'step 3 of max 3'* ]] || { echo 'step 3 of max 3 should be normalized'; result=1; }
   [[ "$content" != *'max depth 3'* ]] || { echo 'max depth 3 should be normalized'; result=1; }
   [[ "$content" == *'max_depth = 1'* || "$content" == *'root context'* ]] \

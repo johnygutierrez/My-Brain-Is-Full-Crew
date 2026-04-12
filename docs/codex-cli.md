@@ -107,14 +107,17 @@ Codex CLI enforces `agents.max_depth = 1`. This means child agents can only go o
 
 ### Tool name differences
 
-Codex CLI does not have the `AskUserQuestion` or `request_user_input` tools. The equivalent patterns are:
+Codex CLI has its own tool set. Some Claude Code tools do not exist in Codex; others have native equivalents. `request_user_input` is a real Codex CLI tool — use it directly for follow-up questions.
 
 | Source concept | Codex CLI equivalent |
 |---|---|
-| `AskUserQuestion` | Ask a direct question in the chat thread and wait for the reply |
-| `request_user_input` | Same — use the root conversation for follow-up questions |
+| `AskUserQuestion` | `request_user_input` (native Codex tool) — ask a follow-up question and wait for the reply |
+| `request_user_input` | Same tool name exists natively in Codex CLI — no translation needed |
 | `Skill tool` | Follow the skill instructions directly in the root context |
 | `Agent tool` | Use `spawn_agent` for a bounded child task; orchestration returns to root |
+| `Read tool` | `shell` (e.g. `cat`) — Codex has no dedicated read_file tool |
+| `Glob tool` / `Grep tool` | `shell` (e.g. `find`, `grep`) or `list_dir` (experimental) |
+| `Bash tool` | `shell` — execute shell commands |
 | `max chain depth 3` | `agents.max_depth = 1` with root-only orchestration |
 | `.mcp.json` | `.codex/config.toml` |
 
@@ -128,31 +131,33 @@ Claude Code uses `.mcp.json`. Codex CLI uses `.codex/config.toml`. The MCP serve
 
 Use this table to verify the Crew works correctly in a real Codex vault after install or update. Run each row and compare the result against the expected outcome.
 
+> **Note:** Use natural-language prompts. The dispatcher in `AGENTS.md` routes to the correct agent based on intent — you do not need to address agents by name.
+
 | Surface | Name | Prompt or command | Expected result |
 |---------|------|-------------------|----------------|
-| Agent | Architect | `@Architect Set up my vault structure` | Architect starts onboarding conversation or confirms vault is already set up |
-| Agent | Scribe | `@Scribe Save this note: quick test` | Scribe creates a note in 00-Inbox with proper frontmatter |
-| Agent | Sorter | `@Sorter Triage my inbox` | Sorter reviews inbox notes and files them, or reports inbox is empty |
-| Agent | Seeker | `@Seeker What do I know about this project?` | Seeker searches the vault and returns results with source citations |
-| Agent | Connector | `@Connector Find connections in my recent notes` | Connector analyzes the vault graph and suggests wikilinks |
-| Agent | Librarian | `@Librarian Run a vault health check` | Librarian scans for broken links, duplicates, and orphan notes |
-| Agent | Transcriber | `@Transcriber Process this transcript: [paste text]` | Transcriber generates structured meeting notes |
-| Agent | Postman | `@Postman Check my email` | Postman scans Gmail (or Hey) and saves actionable emails, or reports missing integration |
-| Skill | onboarding | `/onboarding` | Architect starts the full onboarding conversation |
-| Skill | create-agent | `/create-agent` | Architect walks through designing a new custom agent |
-| Skill | manage-agent | `/manage-agent` | Architect lists, edits, or removes custom agents |
-| Skill | defrag | `/defrag` | Architect runs the 5-phase vault defragmentation |
-| Skill | email-triage | `/email-triage` | Postman scans and prioritizes unread emails |
-| Skill | meeting-prep | `/meeting-prep` | Postman generates a comprehensive meeting brief |
-| Skill | weekly-agenda | `/weekly-agenda` | Postman produces a day-by-day week overview |
-| Skill | deadline-radar | `/deadline-radar` | Postman produces a unified deadline timeline |
-| Skill | transcribe | `/transcribe` | Transcriber processes a recording or transcript into structured notes |
-| Skill | vault-audit | `/vault-audit` | Librarian runs the full 7-phase vault audit |
-| Skill | deep-clean | `/deep-clean` | Librarian runs the extended vault cleanup |
-| Skill | tag-garden | `/tag-garden` | Librarian analyzes and cleans up tags |
-| Skill | inbox-triage | `/inbox-triage` | Sorter processes and routes all inbox notes |
-| Skill | contact-sync | `/contact-sync` | Postman syncs contacts to Apple Contacts |
-| Chaining | bounded child-agent chain | `@Sorter Triage my inbox` (with notes present that mention a new project) | Sorter files notes, then dispatcher signals Architect to create the new project folder; child returns to root before Architect runs |
+| Agent | Architect | `Set up my vault structure` | Architect starts onboarding conversation or confirms vault is already set up |
+| Agent | Scribe | `Save this note: quick test` | Scribe creates a note in 00-Inbox with proper frontmatter |
+| Agent | Sorter | `Batch sort my inbox` | Sorter reviews inbox notes and files them, or reports inbox is empty |
+| Agent | Seeker | `What do I know about this project?` | Seeker searches the vault and returns results with source citations |
+| Agent | Connector | `Find connections in my recent notes` | Connector analyzes the vault graph and suggests wikilinks |
+| Agent | Librarian | `Run a vault health check` | Librarian scans for broken links, duplicates, and orphan notes |
+| Agent | Transcriber | `Process this transcript: [paste text]` | Transcriber generates structured meeting notes |
+| Agent | Postman | `Check my email` | Postman scans Gmail (or Hey) and saves actionable emails, or reports missing integration |
+| Skill | onboarding | `Initialize my vault` | Architect starts the full onboarding conversation |
+| Skill | create-agent | `Create a new agent` | Architect walks through designing a new custom agent |
+| Skill | manage-agent | `List my agents` | Architect lists, edits, or removes custom agents |
+| Skill | defrag | `Defragment the vault` | Architect runs the 5-phase vault defragmentation |
+| Skill | email-triage | `What's in my inbox?` (email) | Postman scans and prioritizes unread emails |
+| Skill | meeting-prep | `Prepare for the meeting` | Postman generates a comprehensive meeting brief |
+| Skill | weekly-agenda | `What's this week?` | Postman produces a day-by-day week overview |
+| Skill | deadline-radar | `What are my deadlines?` | Postman produces a unified deadline timeline |
+| Skill | transcribe | `Transcribe this recording` | Transcriber processes a recording or transcript into structured notes |
+| Skill | vault-audit | `Weekly review` | Librarian runs the full 7-phase vault audit |
+| Skill | deep-clean | `Deep clean the vault` | Librarian runs the extended vault cleanup |
+| Skill | tag-garden | `Clean up tags` | Librarian analyzes and cleans up tags |
+| Skill | inbox-triage | `Triage the inbox` | Sorter processes and routes all inbox notes |
+| Skill | contact-sync | `Sync my contacts` | Postman syncs contacts to Apple Contacts |
+| Chaining | bounded child-agent chain | `Batch sort my inbox` (with notes mentioning a new project) | Sorter files notes, then dispatcher signals Architect to create the new project folder; child returns to root before Architect runs |
 | MCP | MCP visibility | `codex -C <vault> mcp list` | Lists the MCP servers configured in `.codex/config.toml`, or shows the auth/setup state for each server |
 
 ### Running the non-interactive discovery smoke

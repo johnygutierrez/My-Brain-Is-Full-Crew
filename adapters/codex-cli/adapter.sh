@@ -39,24 +39,24 @@ rewrite_codex_paths() {
 # path references are already resolved.
 #
 # Rewrites applied (T-01-06):
-#   - `AskUserQuestion` / AskUserQuestion  → "ask the user" (preserves one-at-a-time constraint phrasing elsewhere)
-#   - `request_user_input` / request_user_input → "ask the user"
+#   - `AskUserQuestion` / AskUserQuestion  → `request_user_input` (Codex native equivalent)
 #   - "Skill tool"  → "invoke the skill"
 #   - "Agent tool"  → "invoke the agent"
 #   - "Read tool"   → "read files"
 #   - "Glob tool"   → "search files"
 #   - "Grep tool"   → "search files"
 #   - "Bash tool"   → "shell"
+#
+# NOTE: `request_user_input` is a real Codex CLI tool — do NOT rewrite it.
 rewrite_tool_compat() {
   local file="$1"
   [[ -f "$file" ]] || return 0
   # Use perl for reliable in-place multi-substitution across all platforms.
   # Each substitution is a plain string replacement (no regex heavy-lifting).
+  # request_user_input is intentionally NOT rewritten — it exists in Codex CLI.
   perl -i -pe '
-    s/`AskUserQuestion`/ask the user/g;
-    s/\bAskUserQuestion\b/ask the user/g;
-    s/`request_user_input`/ask the user/g;
-    s/\brequest_user_input\b/ask the user/g;
+    s/`AskUserQuestion`/`request_user_input`/g;
+    s/\bAskUserQuestion\b/request_user_input/g;
     s/\bSkill tool\b/invoke the skill/g;
     s/\bAgent tool\b/invoke the agent/g;
     s/\bRead tool\b/read files/g;
@@ -100,7 +100,6 @@ normalize_codex_routing_contract() {
   perl -0pi -e '
     s/\binvoke the skill\b/follow the skill instructions directly in the root context/g;
     s/\binvoke the agent\b/spawn a bounded child agent from the root context/g;
-    s/\bask the user\b/ask the user directly in chat and wait for the reply/g;
   ' "$file"
 }
 
@@ -194,12 +193,14 @@ _cc_rewrite_skill_markdown() {
 
   case "$skill_name" in
     onboarding)
+      # After rewrite_tool_compat, AskUserQuestion → request_user_input.
+      # Now normalise the phrasing around request_user_input for Codex's
+      # conversational flow (one question at a time, resume from state file).
       perl -0pi -e '
-        s/You MUST use the ask the user tool for EVERY question in every phase\. This is not optional\. This is how the onboarding works:/Use direct chat for every question in every phase. Ask one direct plain-text question, wait for the user'\''s reply before continuing, and resume from the saved state file if the flow is already active. This is not optional. This is how the onboarding works:/g;
-        s/1\. Ask ONE question using ask the user/1. Ask one direct plain-text question/g;
-        s/2\. Read the user'\''s answer/2. Wait for the user'\''s reply before continuing/g;
-        s/4\. Ask the NEXT question using ask the user/4. Ask the next direct plain-text question/g;
-        s/\*\*ONE question per ask the user call\.\*\* Never bundle 2\+ questions in one message\./**One direct plain-text question at a time.** Never bundle 2+ questions in one message./g;
+        s/You MUST use the `?request_user_input`? tool for EVERY question in every phase\. This is not optional\. This is how the onboarding works:/Use `request_user_input` for every question in every phase. Ask one question at a time, wait for the user'\''s reply before continuing, and resume from the saved state file if the flow is already active. This is not optional. This is how the onboarding works:/g;
+        s/1\. Ask ONE question using `?request_user_input`?/1. Ask one question using `request_user_input`/g;
+        s/4\. Ask the NEXT question using `?request_user_input`?/4. Ask the next question using `request_user_input`/g;
+        s/\*\*ONE question per `?request_user_input`? call\.\*\* Never bundle 2\+ questions in one message\./**One question per `request_user_input` call.** Never bundle 2+ questions in one message./g;
         s/\.codex\/agents\/\{name\}\.md/.codex\/agents\/{name}.toml/g;
         s/\.mcp\.json/.codex\/config.toml/g;
         s/\$HOME\/\.platform\/agents/\$HOME\/.codex\/agents/g;
@@ -207,18 +208,17 @@ _cc_rewrite_skill_markdown() {
       ;;
     create-agent)
       perl -0pi -e '
-        s/You MUST use the ask the user tool for EVERY question in every phase\. This is not optional\. This is how the conversation works:/Use direct chat for every question in every phase. Ask one direct plain-text question, wait for the user'\''s reply before continuing, and resume from the saved state file if the flow is already active. This is not optional. This is how the conversation works:/g;
-        s/1\. Ask ONE question using ask the user/1. Ask one direct plain-text question/g;
-        s/2\. Read the user'\''s answer/2. Wait for the user'\''s reply before continuing/g;
-        s/4\. Ask the NEXT question using ask the user/4. Ask the next direct plain-text question/g;
-        s/\*\*ONE question per ask the user call\.\*\* Never bundle 2\+ questions\./**One direct plain-text question at a time.** Never bundle 2+ questions./g;
+        s/You MUST use the `?request_user_input`? tool for EVERY question in every phase\. This is not optional\. This is how the conversation works:/Use `request_user_input` for every question in every phase. Ask one direct plain-text question at a time, wait for the user'\''s reply before continuing, and resume from the saved state file if the flow is already active. This is not optional. This is how the conversation works:/g;
+        s/1\. Ask ONE question using `?request_user_input`?/1. Ask one direct plain-text question using `request_user_input`/g;
+        s/4\. Ask the NEXT question using `?request_user_input`?/4. Ask the next question using `request_user_input`/g;
+        s/\*\*ONE question per `?request_user_input`? call\.\*\* Never bundle 2\+ questions\./**One question per `request_user_input` call.** Never bundle 2+ questions./g;
         s/\.codex\/agents\/\{name\}\.md/.codex\/agents\/{name}.toml/g;
       ' "$file"
       ;;
     manage-agent)
       perl -0pi -e '
-        s/using `ask the user`/by asking the user directly/g;
-        s/Use `ask the user` to/Ask one direct plain-text question to/g;
+        s/using `request_user_input`/using `request_user_input`/g;
+        s/Use `request_user_input` to/Use `request_user_input` to/g;
         s/If the user specifies a name, read `\.codex\/agents\/\{name\}\.md`/If the user specifies a name, read `\.codex\/agents\/{name}.toml`/g;
         s/Modify the agent file at `\.codex\/agents\/\{name\}\.md`/Modify the agent file at `\.codex\/agents\/{name}.toml`/g;
         s/locate `\.codex\/agents\/\{name\}\.md`/locate `\.codex\/agents\/{name}.toml`/g;
@@ -229,15 +229,15 @@ _cc_rewrite_skill_markdown() {
 
 ## Codex Conversation Flow
 
-- Ask one direct plain-text question when clarification is required.
-- Wait for the user's reply before continuing.
+- Use `request_user_input` when clarification is required.
+- Ask one question at a time, wait for the user's reply before continuing.
 - Resume from the saved state file if the flow is already active.
 EOF
       fi
       ;;
     transcribe)
       perl -0pi -e '
-        s/Use ask the user to collect:/Use direct chat to collect this intake context: ask one direct plain-text question, wait for the user'\''s reply before continuing, and resume from the saved state file if the flow is already active. Collect:/g;
+        s/Use `?request_user_input`? to collect:/Use `request_user_input` to collect this intake context: ask one direct plain-text question at a time, wait for the user'\''s reply before continuing, and resume from the saved state file if the flow is already active. Collect:/g;
       ' "$file"
       ;;
   esac
@@ -295,24 +295,45 @@ adapter_translate_skills() {
 }
 
 # _cc_toml_quote_key <name>
-# Emits the TOML table key for [mcp_servers.<name>].
-# Codex CLI requires MCP server names to match ^[a-zA-Z0-9_-]+$, so any
-# character outside that set is replaced with a hyphen before writing.
+# Emits the TOML table header for [mcp_servers.<name>].
+# If the name contains only bare-key chars (A-Za-z0-9_-), it is emitted
+# unquoted.  Otherwise it is wrapped in double-quotes with backslash and
+# double-quote characters escaped, per TOML spec §3.1.
+#
+# Security: never interpolate unsanitized user input into TOML keys — this
+# function is the single gate for all MCP server names.
 _cc_toml_quote_key() {
   local name="$1"
-  # Sanitize: replace any character not in [a-zA-Z0-9_-] with a hyphen
-  local safe_name="${name//[^a-zA-Z0-9_-]/-}"
-  printf '[mcp_servers.%s]' "$safe_name"
+  # Security: reject control characters (newlines, tabs) that would break
+  # the TOML table header across lines and enable injection.
+  if [[ "$name" == *$'\n'* ]] || [[ "$name" == *$'\r'* ]] || [[ "$name" == *$'\t'* ]]; then
+    echo "# ERROR: server name contains control characters — skipped: $name" >&2
+    return 1
+  fi
+  if [[ "$name" =~ ^[A-Za-z0-9_-]+$ ]]; then
+    # Bare key — safe as-is
+    printf '[mcp_servers.%s]' "$name"
+  else
+    # Quoted key — escape \ and " per TOML basic-string rules
+    local escaped
+    escaped="${name//\\/\\\\}"
+    escaped="${escaped//\"/\\\"}"
+    printf '[mcp_servers."%s"]' "$escaped"
+  fi
 }
 
 # _cc_toml_escape_string <value>
-# Escapes a value for use in a TOML double-quoted string.
-# Escapes backslashes and double-quotes; other characters pass through.
+# Escapes a value for use in a TOML double-quoted basic string.
+# Escapes backslashes, double-quotes, and control characters (newlines, tabs,
+# carriage returns) to prevent line-break injection in single-line TOML values.
 _cc_toml_escape_string() {
   local val="$1"
-  # Escape backslash first, then double-quote
+  # Escape backslash first (before adding new backslashes), then other chars
   val="${val//\\/\\\\}"
   val="${val//\"/\\\"}"
+  val="${val//$'\n'/\\n}"
+  val="${val//$'\r'/\\r}"
+  val="${val//$'\t'/\\t}"
   printf '%s' "$val"
 }
 
@@ -343,18 +364,19 @@ adapter_translate_config() {
     echo 'sandbox_mode = "workspace-write"'
     echo 'sandbox_workspace_write.network_access = false'
     echo ''
-    echo '# Inherit uses the top-level defaults; named profiles override them explicitly.'
+    echo '# Named profiles override the top-level defaults.'
+    echo '# Update these model IDs when newer models become available.'
     echo '[profiles.quality]'
-    echo 'model = "gpt-5.4"'
+    echo 'model = "o3"'
     echo 'model_reasoning_effort = "high"'
     echo ''
     echo '[profiles.balanced]'
-    echo 'model = "gpt-5.4-mini"'
+    echo 'model = "o4-mini"'
     echo 'model_reasoning_effort = "medium"'
     echo ''
     echo '[profiles.budget]'
-    echo 'model = "gpt-5.3-codex-spark"'
-    echo 'model_reasoning_effort = "medium"'
+    echo 'model = "o4-mini"'
+    echo 'model_reasoning_effort = "low"'
     echo ''
     echo '[agents]'
     echo 'max_depth = 1'
@@ -526,24 +548,28 @@ _cc_extract_description() {
 
 # _cc_toml_escape_dquote_string <value>
 # Escapes a string for embedding in a TOML double-quoted basic string.
-# Handles backslash and double-quote characters.
+# Handles backslash, double-quote, and control characters.
 _cc_toml_escape_dquote_string() {
   local val="$1"
   val="${val//\\/\\\\}"
   val="${val//\"/\\\"}"
+  val="${val//$'\n'/\\n}"
+  val="${val//$'\r'/\\r}"
+  val="${val//$'\t'/\\t}"
   printf '%s' "$val"
 }
 
 # _cc_model_to_codex <model>
 # Maps the source model tier into a Codex model id.
+# Uses current production OpenAI models. Update when newer models ship.
 _cc_model_to_codex() {
   local model="$1"
   case "$model" in
-    */*|gpt-*) echo "$model" ;;
-    low)       echo "gpt-5.3-codex-spark" ;;
-    mid)       echo "gpt-5.4-mini" ;;
-    high)      echo "gpt-5.4" ;;
-    *)         echo "$model" ;;
+    */*|gpt-*|o[0-9]*) echo "$model" ;;
+    low)               echo "o4-mini" ;;
+    mid)               echo "o4-mini" ;;
+    high)              echo "o3" ;;
+    *)                 echo "$model" ;;
   esac
 }
 
@@ -562,7 +588,9 @@ _cc_model_reasoning_effort() {
 # explicitly declare write/edit/bash capabilities.
 _cc_capabilities_to_sandbox() {
   local caps="$1"
-  for cap in $caps; do
+  local -a tokens
+  read -ra tokens <<< "$caps"
+  for cap in "${tokens[@]}"; do
     case "$cap" in
       write|edit|bash)
         echo "workspace-write"
@@ -593,6 +621,13 @@ adapter_translate_agent_toml() {
 
   local name; name="$(parse_frontmatter "$agent_file" name)"
   [[ -z "$name" ]] && name="$(basename "$agent_file" .md)"
+
+  # Security: reject path-separator characters and traversal sequences to
+  # prevent writes outside the target agents directory.
+  if [[ "$name" == */* ]] || [[ "$name" == *..* ]] || [[ -z "$name" ]]; then
+    echo "ERROR: unsafe agent name rejected: '$name'" >&2
+    return 1
+  fi
 
   local description; description="$(_cc_extract_description "$agent_file")"
   local desc_escaped; desc_escaped="$(_cc_toml_escape_dquote_string "$description")"
